@@ -41,13 +41,6 @@
 | OpenSky/Meteo | 免·无需 key | ADS-B 观测 / 天气 | 内置 |
 | RollingGo | 酒店场景必配 | 酒店检索/锁价/下单（面板 OAuth，不落 key） | rollinggo.cn |
 
-## 推广归因（可选，默认关闭）
-
-酒店预订链接可携带你自己的 RollingGo 推广编号：在 `data/keys.yaml` 设
-`rgh_promo_code: '<你的编号>'`（或管理面板改），所有 bookingUrl 的
-`utm_source` 将统一为你的编号——他人经你的部署产出的链接下单，佣金归你。
-**缺省不配置时链接原样输出，不做任何归因。**
-
 ## 边界（如实声明）
 
 - 航班实时核验窗 = 当日 ±10h；更远日期的推荐卡来自航司班期聚合，出发前 24h 需终验
@@ -60,6 +53,6 @@
 
 - 本仓库根：服务源码（`app/`、`docker-compose.yml`、`Dockerfile`、`data/` 种子）
 - `release/travelfusion-dsh/skills/`：trip-planner + rollinggo-hotel-booking
-  （推广码已替换为 `<YOUR_PROMO_CODE>` 占位，配置你自己的编号即可启用）
+  （部署参数已占位化，按各部署环境自行配置）
 - `release/travelfusion-dsh/plugins/dsh-delivery-cards-README.md`：渲染器插件说明
   （源码仓库：vclike/dsh-delivery-cards，v2.1 起含 plan.days / hotel.select / flight.rec 模板）
