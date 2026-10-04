@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.nas-snapshot/
+service/data/
+*.db
+*.sqlite
+*.parquet
+.scratch/
+

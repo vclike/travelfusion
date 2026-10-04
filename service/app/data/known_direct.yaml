@@ -1,0 +1,9 @@
+# 已知直飞表 —— attribution lint L2 的正向判据（保守种子策略）
+# 规则：只录「有独立源实证」的直飞城市对；缺行 = 未知，绝不判罚（防误杀）。
+# 城市码口径与 flight_price 的 origin_code/destination_code 一致。
+# 维护纪律：时刻表源复核后可追加；换季（3 月末/10 月末）后必须复核。
+pairs:
+  CTU-SYD:
+    carriers: [3U]
+    as_of: "2026-10"
+    source: "flightmapper TFU-SYD 全时刻实抓（2026-10-01）：唯一直飞 3U3891，10-25 冬春航季起约每周 5-7 班"

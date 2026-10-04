@@ -1,0 +1,27 @@
+[project]
+name = "travelfusion"
+version = "0.1.0"
+description = "门到门交通规划聚合服务：航班（国内外）+ 火车 + 地面交通，免费额度池化治理"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+  "mcp>=1.2,<2",
+  "pyyaml>=6.0",
+  "httpx>=0.27",
+  "pyarrow>=15.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

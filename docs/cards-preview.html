@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>travelfusion 卡片样式预览 v2（低密度 · 双主题）</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --ink:#1c2330; --sub:#68738a; --line:#e6e9f0;
+    --soft:#f4f6fa; --brand:#2f6bff; --ok:#12a150; --warn:#b06f00; --bad:#d93840;
+    --warnbg:#fdf3e2; --infobg:#edf1fe; --mapbg:#141a26; --mapline:#8fa4d0;
+    --maptext:#9aa8c4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e1218; --card:#171d29; --ink:#e8ecf4; --sub:#8b96ad; --line:#262e40;
+      --soft:#1d2432; --brand:#6d97ff; --ok:#3ecf8e; --warn:#e8a54b; --bad:#f06a70;
+      --warnbg:#2b2318; --infobg:#1c2438; --mapbg:#0b0f18; --mapline:#5f7cc0;
+      --maptext:#7d8db0;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+       font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+       padding:26px 16px 50px}
+  .wrap{max-width:640px;margin:0 auto}
+  h1{font-size:19px;margin-bottom:4px}
+  .sub{color:var(--sub);font-size:13px;margin-bottom:22px}
+  h2{font-size:12.5px;color:var(--sub);font-weight:600;margin:26px 0 8px;
+     letter-spacing:.05em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+        padding:15px 16px;box-shadow:0 1px 3px rgba(10,14,22,.05);font-size:13.5px;
+        line-height:1.5;margin-bottom:14px}
+  .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+  .title{font-weight:700;font-size:14px}
+  .badge{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--soft);
+         color:var(--sub)}
+  .badge.brand{background:color-mix(in srgb,var(--brand) 12%,transparent);color:var(--brand)}
+  .amt{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+  .flag{font-size:11px;padding:1px 7px;border-radius:6px;margin-left:6px}
+  .flag.lcc{background:var(--warnbg);color:var(--warn)}
+  .flag.redeye{background:color-mix(in srgb,var(--bad) 10%,transparent);color:var(--bad)}
+  .bar{height:5px;border-radius:3px;background:var(--soft);position:relative;margin:10px 0 5px}
+  .bar i{position:absolute;top:-3px;width:11px;height:11px;border-radius:50%;
+         background:var(--brand);border:2px solid var(--card)}
+  .bl{font-size:12px;color:var(--sub)}
+  .bl b{color:var(--ink)}
+  .notice{font-size:12.5px;padding:7px 10px;border-radius:8px;margin-top:9px;
+          background:var(--warnbg);color:var(--warn)}
+  .foot{display:flex;justify-content:space-between;align-items:center;
+        margin-top:11px;font-size:11.5px;color:var(--sub)}
+  .btn{font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid var(--brand);
+       color:var(--brand);font-weight:600}
+  .btn.solid{background:var(--brand);color:#fff}
+  .btn.ghost{border-color:var(--line);color:var(--sub)}
+  .big{font-size:21px;font-weight:800;letter-spacing:-.01em}
+  .unit{font-size:12px;color:var(--sub);font-weight:400}
+  .grid{display:flex;gap:8px;margin-top:9px}
+  .cell{flex:1;background:var(--soft);border-radius:9px;padding:8px 10px}
+  .cell .k{font-size:11px;color:var(--sub)}
+  .cell .v{font-weight:700;font-size:14.5px;margin-top:2px}
+  svg{display:block}
+  svg text{font-family:inherit}
+  .steps{list-style:none;margin-top:8px}
+  .steps li{display:flex;gap:9px;align-items:center;padding:4px 0;font-size:13px}
+  .steps .ic{width:22px;height:22px;border-radius:6px;color:var(--brand);
+             background:color-mix(in srgb,var(--brand) 10%,transparent);
+             display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+  .qrow{display:flex;justify-content:space-between;align-items:center;
+        padding:7px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .qrow:first-child{border-top:none}
+  .qbar{width:38%;height:4px;border-radius:2px;background:var(--soft)}
+  .qbar i{display:block;height:100%;border-radius:2px;background:var(--brand)}
+</style>
+</head>
+<body><div class="wrap">
+<h1>travelfusion 卡片 v2</h1>
+<div class="sub">低密度版 · 跟随系统深浅色 · 每卡一个主角 + ≤2 辅助 + ≤1 动作（数据为真机样例）</div>
+
+<h2>机票多选一（incentive）</h2>
+<div class="card">
+  <div class="hd"><span class="title">成都 → 曼谷</span><span class="badge brand">奖励旅游</span></div>
+  <div style="display:flex;justify-content:space-between;padding:7px 0">
+    <span>✓ CZ 南航 <span style="color:var(--sub)">12:10 起飞</span></span><span class="amt">¥1,372</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line)">
+    <span>FD 泰亚航 <span style="color:var(--sub)">02:30 起飞</span>
+      <span class="flag lcc">LCC</span><span class="flag redeye">红眼</span></span>
+    <span class="amt">¥1,153</span>
+  </div>
+  <div class="bar"><i style="left:2%"></i></div>
+  <div class="bl">价格处于 90 天最低位 · 可入手</div>
+  <div class="notice">⚠️ FD 为廉航：无免费行李 · 无餐食 · 选座收费</div>
+  <div class="foot"><span>TP 缓存 · 2h 过期</span><span class="btn">¥0.5 校准官方价</span></div>
+</div>
+
+<h2>航班状态</h2>
+<div class="card">
+  <div class="hd"><span class="title">✈️ CA165 北京→墨尔本</span><span class="badge">国航</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 0">
+    <span>起飞 <b>01:12</b>（+12min）</span><span>到达预计 <b>14:25</b></span>
+  </div>
+  <div class="bl">T3 → T2 ｜ 行李待定 ｜ 来源 AirLabs(live)</div>
+</div>
+
+<h2>双源核验</h2>
+<div class="card">
+  <div class="hd"><span class="title">✅ 核验一致 · 高置信</span><span class="badge brand">verify</span></div>
+  <div style="font-size:13px">计划层在飞 ＋ ADS-B 捕获：THA615 曼谷上空 2,568m 下降中</div>
+  <div class="bl" style="margin-top:6px">AirLabs × OpenSky(live)</div>
+</div>
+
+<h2>地面交通 · 境内（含线路示意）</h2>
+<div class="card">
+  <div class="hd"><span class="title">🚗 成都 → 乐山</span><span class="badge">高德</span></div>
+  <div class="big">136.8<span class="unit"> km · 1h33m</span></div>
+  <div class="grid">
+    <div class="cell"><div class="k">过路费</div><div class="v">¥52</div></div>
+    <div class="cell"><div class="k">打车估价</div><div class="v">¥445</div></div>
+  </div>
+  <svg viewBox="0 0 400 96" width="100%" style="margin-top:10px">
+    <path d="M56,70 C150,18 260,18 344,50" stroke="var(--mapline)" stroke-width="2.5"
+          fill="none" stroke-dasharray="6 5" stroke-linecap="round"/>
+    <circle cx="56" cy="70" r="5.5" fill="var(--brand)"/>
+    <circle cx="344" cy="50" r="5.5" fill="var(--ok)"/>
+    <text x="56" y="90" fill="var(--maptext)" font-size="12" text-anchor="middle">成都</text>
+    <text x="344" y="70" fill="var(--maptext)" font-size="12" text-anchor="middle">乐山</text>
+    <text x="200" y="26" fill="var(--maptext)" font-size="11" text-anchor="middle">136.8km · 93min</text>
+  </svg>
+</div>
+
+<h2>地面交通 · 境外（transit 链）</h2>
+<div class="card">
+  <div class="hd"><span class="title">🚄 大阪 → 东京</span><span class="badge">Google</span></div>
+  <div class="big">498.9<span class="unit"> km · 6h</span></div>
+  <ul class="steps">
+    <li><span class="ic">🚶</span> 步行 5min</li>
+    <li><span class="ic">🚄</span> 东海道新干线</li>
+    <li><span class="ic">🚌</span> 83 路巴士</li>
+  </ul>
+</div>
+
+<h2>行程线路图（城表坐标 · SVG）</h2>
+<div class="card">
+  <div class="hd"><span class="title">🧳 成都 → 曼谷 → 芭提雅 · 5 天</span><span class="badge brand">奖励旅游</span></div>
+  <svg viewBox="0 0 560 150" width="100%">
+    <path d="M70,110 C220,20 380,25 460,78" stroke="var(--mapline)" stroke-width="2.5"
+          fill="none" stroke-dasharray="7 6"/>
+    <path d="M460,78 C500,92 520,100 534,106" stroke="var(--ok)" stroke-width="2.5"
+          fill="none" stroke-dasharray="7 6"/>
+    <circle cx="70" cy="110" r="6" fill="var(--brand)"/>
+    <circle cx="460" cy="78" r="6" fill="var(--warn)"/>
+    <circle cx="534" cy="106" r="6" fill="var(--ok)"/>
+    <text x="70" y="132" fill="var(--maptext)" font-size="12" text-anchor="middle">① 成都</text>
+    <text x="460" y="60" fill="var(--maptext)" font-size="12" text-anchor="middle">② 曼谷</text>
+    <text x="534" y="128" fill="var(--maptext)" font-size="12" text-anchor="middle">③ 芭提雅</text>
+    <text x="252" y="36" fill="var(--maptext)" font-size="11">✈️ ¥1,153 · 3h20m</text>
+    <text x="470" y="118" fill="var(--maptext)" font-size="11">🚗 148km</text>
+  </svg>
+</div>
+
+<h2>天气 / 付费确认 / 空态</h2>
+<div class="card">
+  <div class="hd"><span class="title">🌦️ 曼谷 · 10-03</span><span class="badge">预报</span></div>
+  <div class="big">25.0–30.4<span class="unit"> °C</span> <span style="color:var(--sub);font-size:12.5px">降水 8.7mm</span></div>
+</div>
+<div class="card">
+  <div class="hd"><span class="title">💳 校准官方价</span><span class="badge brand">¥0.5</span></div>
+  <div style="font-size:13px">调用飞常准拉取精确票价，本月预算余 ¥19.5。</div>
+  <div class="foot"><span></span><span><span class="btn ghost" style="margin-right:8px">暂不</span><span class="btn solid">同意校准</span></span></div>
+</div>
+<div class="card">
+  <div class="hd"><span class="title">11-17 暂无价格数据</span><span class="badge">超出窗口</span></div>
+  <div class="bl">飞常准价格窗口约 45 天，出行前 30 天内可校准。</div>
+  <div class="foot"><span></span><span class="btn ghost">临近提醒我</span></div>
+</div>
+
+<h2>额度仪表盘</h2>
+<div class="card">
+  <div class="qrow"><span>airlabs</span><span class="qbar"><i style="width:98%"></i></span><span>986/1000</span></div>
+  <div class="qrow"><span>travelpayouts</span><span class="qbar"><i style="width:92%"></i></span><span>185/200</span></div>
+  <div class="qrow"><span>amap</span><span class="qbar"><i style="width:99%"></i></span><span>149,988/150k</span></div>
+  <div class="qrow"><span>variflight <span style="color:var(--warn)">paid</span></span>
+    <span class="qbar"><i style="width:97%;background:var(--warn)"></i></span><span>¥0.5/¥20</span></div>
+</div>
+</div></body></html>

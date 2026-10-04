@@ -1,0 +1,120 @@
+# airlines_kb 样例条目 v0.1 —— 格式确认用（5 家 + 1 决策项）
+# schema 见 docs/10-canonical-schema.md §6b；确认格式后按报告批量装配全部 60 家
+
+- iata: 9C
+  icao: CQH
+  name_cn: 春秋航空
+  name_en: Spring Airlines
+  aliases: ["春秋", "Spring Airlines"]
+  carrier_type: low_cost
+  alliance: null
+  hub: [SHA]
+  parent_iata: null
+  status: active
+  hints:
+    - { tag: 行李, text: "免费手提仅7kg、20×30×40cm（不含轮），安检/值机/登机口三重查验" }
+    - { tag: 行李, text: "20寸箱需159元升级手提额或提前线上购托运" }
+    - { tag: 收费, text: "行李线上购截止起飞前1小时，逾期柜台价约2–4倍" }
+    - { tag: 餐食, text: "无免费餐食，预订热餐79元起" }
+    - { tag: 选座, text: "选座收费，安全出口排约100元起" }
+    - { tag: 座椅, text: "A320高密度180–186座，间距约28–29英寸" }
+  notes: []
+  source: "deep-research-20260929"
+  as_of: "2026-09"
+
+- iata: KN
+  icao: CUA
+  name_cn: 中国联合航空
+  name_en: China United Airlines
+  aliases: ["中联航", "中联"]
+  carrier_type: low_cost
+  alliance: null
+  hub: [PKX]
+  parent_iata: MU
+  status: active
+  hints:
+    - { tag: 行李, text: "免费手提限软包（无拉杆轮），10kg、20×40×55cm" }
+    - { tag: 行李, text: "特价I/Z/U舱无免费手提，可购100元/件" }
+    - { tag: 行李, text: "托运计件制23kg/件——国内首家计件制国企航司" }
+    - { tag: 座椅, text: "737-800全经济186座，间距30–31英寸（宽于春秋）" }
+  notes: []
+  source: "deep-research-20260929"
+  as_of: "2026-09"
+
+- iata: CA
+  icao: CCA
+  name_cn: 中国国际航空
+  name_en: Air China
+  aliases: ["国航", "中国国际航空", "Air China"]
+  carrier_type: full_service
+  alliance: "Star Alliance"
+  hub: [PEK]
+  parent_iata: null
+  status: active
+  hints: []                              # 无已知偏离：符合国内全服务基线（20kg/1件手提）
+  notes:
+    - "深航(ZH)、山航(SC) 为国航系，基础规则可按 parent 继承"
+    - "CAPSE 2025Q4 满意度 4.01（第三方口径）"
+  source: "deep-research-20260929"
+  as_of: "2026-09"
+
+- iata: FR
+  icao: RYR
+  name_cn: 瑞安航空
+  name_en: Ryanair
+  aliases: ["瑞安", "Ryanair"]
+  carrier_type: ultra_low_cost
+  alliance: null
+  hub: [DUB, STN, BG, "等欧洲多基地"]
+  parent_iata: null
+  status: active
+  hints:
+    - { tag: 行李, text: "免费仅40×30×20cm/10kg座位下小包，行李架位全收费" }
+    - { tag: 收费, text: "未在线值机收机场值机费£30–55，须起飞前2小时完成在线值机" }
+    - { tag: 收费, text: "托运订票时£21.49起、柜台£59.99——越晚越贵" }
+    - { tag: 收费, text: "2025-11起全面数字化登机牌，机场不收纸质" }
+    - { tag: 座椅, text: "间距28–29英寸" }
+    - { tag: 其他, text: "多用二线机场，OTA订票需€0.59快速验证" }
+  notes: []
+  source: "deep-research-20260929"
+  as_of: "2026-09"
+
+- iata: HU
+  icao: CHH
+  name_cn: 海南航空
+  name_en: Hainan Airlines
+  aliases: ["海航", "Hainan"]
+  carrier_type: full_service
+  alliance: unknown                      # 报告未取得现行归属佐证
+  hub: [HAK]
+  parent_iata: null
+  status: active
+  hints:
+    - { tag: 餐食, text: "国内配餐航班免费餐，可兑换最高600积分（起飞前4h截止）" }
+    - { tag: 行李, text: "手提7kg、55×40×20cm（国内经济舱1件）" }
+    - { tag: 其他, text: "Skytrax 2026 全球第8、连续15年五星；经济舱全球第7" }
+  notes:
+    - "CAPSE 2025Q4 满意度 3.99（第三方口径）"
+    - "金鹏白金/金卡托运额+30kg、银卡+20kg"
+  source: "deep-research-20260929"
+  as_of: "2026-09"
+
+# —— 决策项：已停运航司的处理（待用户拍板）——
+- iata: NK
+  icao: NKS
+  name_cn: 精神航空
+  name_en: Spirit Airlines
+  aliases: ["精神", "Spirit"]
+  carrier_type: ultra_low_cost
+  alliance: null
+  hub: []
+  parent_iata: null
+  status: ceased_operations              # 提案：保留+标记，而非删除（历史价格基线需要对照组）
+  ceased_at: "2026-05-02"
+  hints:
+    - { tag: 其他, text: "已于2026-05-02停止运营（超廉航模式样本）" }
+  notes:
+    - "停运前：免费仅18×14×8英寸小包，连付费也不收登机箱；行李费$30→$65+按航段重复计"
+    - "历史样本：仅用于历史价格基线比对，不再作为可预订选项"
+  source: "deep-research-20260929"
+  as_of: "2026-09"

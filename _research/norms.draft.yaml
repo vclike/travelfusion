@@ -1,0 +1,40 @@
+# norms.draft.yaml —— 行业基线（航司知识库的"常态"参照）
+# 由 deep-research-20260929 报告蒸馏；航司条目 hints 只记"与基线的偏离"
+# as_of: 2026-09 ｜ 来源: _research/deep-research-airlines-report.md
+
+norms:
+  cn_domestic_fsc:            # 中国国内线·全服务航司
+    checked_kg_economy: 20
+    carry_on: "1件 5–8kg（各家 5/7/8 并存），55×40×20cm 常见"
+    meals: "配餐航班免费餐食，2025 年投入仍在增长（未取消）"
+    note: >
+      20kg 是行业惯例而非国家规定——交通运输部 2021 年第 3 号令删除一刀切条款，
+      改为强制披露义务；一切以各航司《运输总条件》为准。服务投诉/满意度无官方航司级源，
+      第三方口径：Skytrax 排名 / CAPSE 季度满意度（厦航4.08榜首） / 消费保投诉量。
+
+  intl_fsc:                   # 国际线·全服务头部
+    measuring: "重量制（中国系）与件数制（欧美系）并存；泰航2026-03起整体转件制；新航/阿联酋双轨"
+    checked_piece: "件数制常见 1–2 件 × 23kg（Basic Economy 档可能 0 件：BA/AA/Delta 票价分层）"
+    us_norm: "件数制，单件 50lb/23kg、三边 62in/157cm；美加航线例外按首个市场承运人（DOT 399.87）"
+    interline: "联程行李按 IATA Res 302 四步法/MSC 逐段判定（美加除外）"
+
+  lcc:                        # 廉航
+    carry_on: "普遍 7kg 或更小（欧美头部仅座位下小包：FR/Wizz 40×30×20cm 10kg）"
+    checked: "通常 0 免费；线上预购 vs 现场/登机口价差 2–4 倍"
+    meals: "无免费餐食，机上付费/预购"
+    seat_selection: "普遍收费"
+    note: "中国廉航 2026 年普遍禁免费带 20 寸箱；西部/九元/乌航执行 7kg+20×30×40 差异化标准"
+
+  seat_pitch:
+    fsc_narrowbody: "30–32 英寸"
+    fsc_widebody: "31–33 英寸（十联排 3-4-3 内段可窄至 16.3 英寸）"
+    lcc: "28–29 英寸（Frontier 预倾斜固定 28 英寸）"
+    note: >
+      机型子变体比航司品牌更决定舒适度——南航 A320(32X) 180 座高密度官方自报 28/29 英寸，
+      与廉航同档；南航官网是唯一逐机型一手数据源（SeatGuru 已于 2025-10-31 关停，
+      替代：AeroLOPA 首选 / SeatMaps 快比但准确性受批评）。
+
+  purchase_deadlines:         # 行李/值机决策截止（硬提醒素材）
+    checked_bag_online: "春秋 起飞前1h ｜ Ryanair 前2h ｜ 泰狮 前3h"
+    ryanair_online_checkin: "起飞前 2h，否则机场值机费 £30–55（受出发地法规封顶）"
+    airport_vs_online: "现场价为线上预购 2–4 倍（春秋柜台 420 vs 网上 179）"

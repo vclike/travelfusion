@@ -1,0 +1,50 @@
+# 行业基线（norms）—— 航司条目 hints 只记"与基线的偏离"
+# 来源: _research/deep-research-airlines-report.md ｜ as_of: 2026-09
+
+norms:
+  cn_domestic_fsc:
+    checked_kg_economy: 20
+    carry_on: "1件 5–8kg 各家并存，55×40×20cm 常见"
+    meals: "配餐航班免费；付费选餐为增值项"
+    note: >
+      20kg 是行业惯例而非国家规定（交通运输部 2021 年第 3 号令删除一刀切条款，
+      改强制披露义务）；以各航司《运输总条件》为准。
+  intl_fsc:
+    measuring: "重量制（中国系）与件数制（欧美系）并存；泰航 2026-03 起整体转件制"
+    checked_piece: "件数制常见 1–2 件 × 23kg（Basic Economy 档可能 0 件）"
+    us_norm: "单件 50lb/23kg、三边 62in/157cm；美加航线例外按首个市场承运人（DOT 399.87）"
+    interline: "联程行李按 IATA Res 302 四步法/MSC 逐段判定（美加除外）"
+  lcc:
+    carry_on: "普遍 7kg 或更小；欧美头部仅座位下小包（FR/Wizz 40×30×20cm/10kg）"
+    checked: "通常 0 免费；线上预购 vs 现场价差 2–4 倍"
+    meals: "无免费餐食"
+    seat_selection: "普遍收费"
+    note: "中国廉航 2026 年普遍禁免费带 20 寸箱；西部/九元/乌航执行 7kg+20×30×40 差异化"
+  seat_pitch:
+    fsc_narrowbody: "30–32 英寸"
+    fsc_widebody: "31–33 英寸"
+    lcc: "28–29 英寸（Frontier 预倾斜固定 28 英寸）"
+    note: >
+      机型子变体比航司品牌更决定舒适度（南航 A320(32X) 180 座高密度官方自报 28/29 英寸）；
+      SeatGuru 已于 2025-10-31 关停，替代：AeroLOPA 首选 / SeatMaps 快比。
+  purchase_deadlines:
+    checked_bag_online: "春秋 起飞前1h ｜ Ryanair 前2h ｜ 泰狮 前3h"
+    ryanair_online_checkin: "起飞前 2h，否则机场值机费 £30–55（受出发地法规封顶）"
+    airport_vs_online: "现场价为线上预购 2–4 倍（春秋柜台 420 vs 网上 179）"
+
+trip_rules:
+  red_eye_hour_range: [0, 6]   # 出发地当地时间 00:00–05:59 起飞 = 红眼
+  lcc_airlines: ["9C", "KN", "8L", "PN", "DZ", "G5", "UQ", "AQ", "FD", "AK", "QZ", "TR"]
+  note: >
+    trip_type=incentive（奖励旅游）口径：廉航与红眼会被逐条标注并压后排序；
+    personal（个人）口径不加过滤。名单由 agent 维护（append-only 修订）。
+
+revisions:
+  - at: "2026-09"
+    by: "agent"
+    key: "seed"
+    reason: "deep-research-20260929 报告蒸馏初版"
+  - at: "2026-09-30"
+    by: "agent"
+    key: "trip_rules"
+    reason: "双场景（个人/奖励旅游）规则引擎种子：红眼窗口+LCC 名单"

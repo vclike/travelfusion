@@ -1,0 +1,218 @@
+{
+  "version": "0.1.0-seed",
+  "_comment": "Phase 1：airlabs/aviationstack/opensky key 已真机探针验证（2026-09-29），OpenSky ZBAA 包围盒实测有观测（3 架）。travelpayouts/amap 待 key。",
+  "providers": [
+    {
+      "id": "airlabs",
+      "status": "active",
+      "tier": "free",
+      "costPerCall": 1,
+      "capabilities": [
+        "flight.status",
+        "flight.schedule",
+        "flight.delay",
+        "airport.db",
+        "airline.db"
+      ],
+      "auth": "query_param:api_key",
+      "key_configured": true,
+      "verifiedAt": "2026-09-29",
+      "quota": {
+        "group": "search",
+        "period": "month",
+        "limit": 1000,
+        "mode": "monthly"
+      },
+      "billing": {
+        "chargeOnFailure": false
+      },
+      "docs": "docs/07-api-reference.md",
+      "notes": "免费 key 单查 limit=50；签名认证备选；待 key 接入"
+    },
+    {
+      "id": "aviationstack",
+      "status": "disabled",
+      "deprecated_reason": "2026-10-01 实测审计：8/8 探针零命中（班号匹配覆盖率≈0），100次/月额度空转；覆盖问题解决后重评",
+      "tier": "free",
+      "costPerCall": 2,
+      "capabilities": [
+        "flight.status",
+        "airport.db",
+        "airline.db"
+      ],
+      "auth": "query_param:access_key",
+      "key_configured": true,
+      "verifiedAt": "2026-09-29",
+      "quota": {
+        "group": "search",
+        "period": "month",
+        "limit": 100,
+        "mode": "monthly"
+      },
+      "billing": {
+        "chargeOnFailure": false
+      },
+      "notes": "1次/60秒滑动窗；免费层仅实时状态+基础库；待 key"
+    },
+    {
+      "id": "opensky",
+      "status": "active",
+      "tier": "free",
+      "costPerCall": 4,
+      "capabilities": [
+        "flight.observe"
+      ],
+      "auth": "oauth2:client_credentials",
+      "key_configured": true,
+      "verifiedAt": "2026-09-29",
+      "quota": {
+        "group": "observe",
+        "period": "day",
+        "limit": 4000,
+        "mode": "monthly"
+      },
+      "billing": {
+        "chargeOnFailure": false
+      },
+      "notes": "OAuth 已验证（2026-09-29）；ZBAA 包围盒实测 3 架观测——境内覆盖确认有数据，密度待多时段复测"
+    },
+    {
+      "id": "travelpayouts",
+      "status": "active",
+      "tier": "free",
+      "costPerCall": 1,
+      "capabilities": [
+        "flight.price",
+        "price.calendar"
+      ],
+      "auth": "header:X-Access-Token",
+      "key_configured": true,
+      "verifiedAt": "2026-09-29",
+      "quota": {
+        "group": "price",
+        "period": "day",
+        "limit": 200,
+        "mode": "monthly"
+      },
+      "billing": {
+        "chargeOnFailure": false
+      },
+      "notes": "待 token；缓存价带 expires_at；200次/小时未取证，按自适应退避设计"
+    },
+    {
+      "id": "variflight",
+      "status": "active",
+      "tier": "paid",
+      "costPerCall": 0.5,
+      "capabilities": [
+        "flight.status",
+        "flight.price"
+      ],
+      "auth": "header:X-API-Key",
+      "key_configured": true,
+      "verifiedAt": "2026-09-30",
+      "quota": {
+        "period": "total",
+        "limit": null,
+        "mode": "paygo"
+      },
+      "billing": {
+        "chargeOnFailure": false
+      },
+      "notes": "官方 Aviation MCP（X-API-Key 双 key 实测可用）；付费校准源已入降级链——仅 paid_calibrate=true 放行（dispatch 付费闸门三连管辖）；价格窗约 45 天，窗外诚实 NO_MATCH；计费口径暂记 0.5/次待账单校准"
+    },
+    {
+      "id": "amap",
+      "status": "active",
+      "tier": "free",
+      "costPerCall": 1,
+      "capabilities": [
+        "ground.route",
+        "place.search",
+        "poi.around",
+        "poi.search",
+        "weather.cn"
+      ],
+      "auth": "query_param:key",
+      "key_configured": true,
+      "verifiedAt": "2026-09-29",
+      "quota": {
+        "group": "lbs",
+        "period": "month",
+        "limit": 150000,
+        "mode": "monthly"
+      },
+      "billing": {
+        "chargeOnFailure": false
+      },
+      "notes": "adapter 已上线（2026-09-29，route_ground 真机验证 成都→乐山 136.8km/93min）；GCJ-02 出口统一转 WGS-84"
+    }
+  ],
+  "order": {
+    "flight.status": [
+      "airlabs",
+      "aviationstack",
+      "variflight"
+    ],
+    "flight.price": [
+      "travelpayouts",
+      "variflight"
+    ],
+    "ground.route": [
+      "amap"
+    ],
+    "flight.observe": [
+      "opensky"
+    ],
+    "poi.search": [
+      "amap"
+    ],
+    "poi.around": [
+      "amap"
+    ]
+  },
+  "external": [
+    {
+      "id": "openmeteo",
+      "status": "active",
+      "tier": "free",
+      "costPerCall": 0,
+      "capabilities": [
+        "weather.context"
+      ],
+      "auth": "none",
+      "key_configured": true,
+      "verifiedAt": "2026-09-30",
+      "quota": {
+        "period": "total",
+        "limit": null,
+        "mode": "unlimited"
+      },
+      "notes": "Open-Meteo 无 key 无额度限制；≤16 天预报层 / >16 天气候常态层（模型月度投影）"
+    },
+    {
+      "id": "googlemaps",
+      "status": "active",
+      "tier": "free",
+      "costPerCall": 0,
+      "capabilities": [
+        "ground.route.intl"
+      ],
+      "auth": "query_param:key",
+      "key_configured": true,
+      "verifiedAt": "2026-09-30",
+      "quota": {
+        "period": "month",
+        "limit": 20000,
+        "mode": "monthly"
+      },
+      "notes": "境外地面交通（与高德境内互补）；WGS-84 原生零转换；月免费额度内个人用量足够，保守上限 20000 次/月"
+    },
+    {
+      "id": "12306",
+      "kind": "external-mcp",
+      "tier": "free",
+      "hint": "火车票外挂；Phase 1 由服务子进程托管，统一缓存与低频纪律"
+    }
+  ]
+}

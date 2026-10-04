@@ -1,0 +1,278 @@
+airlines:
+  CA: 中国国航
+  MU: 中国东航
+  CZ: 中国南方航空
+  HU: 海南航空
+  3U: 四川航空
+  SC: 山东航空
+  ZH: 深圳航空
+  MF: 厦门航空
+  HO: 吉祥航空
+  GJ: 长龙航空
+  9C: 春秋航空
+  KN: 中国联航
+  PN: 西部航空
+  8L: 祥鹏航空
+  TV: 西藏航空
+  OQ: 重庆航空
+  FD: 泰亚航
+  AK: 亚洲航空
+  QZ: 印尼亚航
+  TR: 酷航
+  VJ: 越捷航空
+  SL: 泰狮航
+  TG: 泰国国际航空
+  SQ: 新加坡航空
+  CX: 国泰航空
+  HX: 香港航空
+  NX: 澳门航空
+  BR: 长荣航空
+  CI: 中华航空
+  JL: 日本航空
+  NH: 全日空
+  MM: 乐桃航空
+  KE: 大韩航空
+  OZ: 韩亚航空
+  7C: 济州航空
+  LH: 汉莎航空
+  AF: 法国航空
+  BA: 英国航空
+  KL: 荷兰皇家航空
+  SU: 俄罗斯航空
+  TK: 土耳其航空
+  EK: 阿联酋航空
+  QR: 卡塔尔航空
+  EY: 阿提哈德航空
+  SQ2: 新加坡酷航
+  UA: 美国联合航空
+  AA: 美国航空
+  DL: 达美航空
+  AC: 加拿大航空
+  NZ: 新西兰航空
+  QF: 澳洲航空
+airports:
+  PEK:
+    name: 北京首都
+    cc: CN
+  PKX:
+    name: 北京大兴
+    cc: CN
+  SHA:
+    name: 上海虹桥
+    cc: CN
+  PVG:
+    name: 上海浦东
+    cc: CN
+  CAN:
+    name: 广州白云
+    cc: CN
+  SZX:
+    name: 深圳宝安
+    cc: CN
+  CTU:
+    name: 成都双流
+    cc: CN
+  TFU:
+    name: 成都天府
+    cc: CN
+  KMG:
+    name: 昆明长水
+    cc: CN
+  HGH:
+    name: 杭州萧山
+    cc: CN
+  XIY:
+    name: 西安咸阳
+    cc: CN
+  WUH:
+    name: 武汉天河
+    cc: CN
+  NKG:
+    name: 南京禄口
+    cc: CN
+  XMN:
+    name: 厦门高崎
+    cc: CN
+  TAO:
+    name: 青岛胶东
+    cc: CN
+  CKG:
+    name: 重庆江北
+    cc: CN
+  CSX:
+    name: 长沙黄花
+    cc: CN
+  SYX:
+    name: 三亚凤凰
+    cc: CN
+  HRB:
+    name: 哈尔滨太平
+    cc: CN
+  URC:
+    name: 乌鲁木齐地窝堡
+    cc: CN
+  HKG:
+    name: 香港国际
+    cc: HK
+  MFM:
+    name: 澳门
+    cc: MO
+  TPE:
+    name: 台北桃园
+    cc: TW
+  NRT:
+    name: 东京成田
+    cc: JP
+  HND:
+    name: 东京羽田
+    cc: JP
+  KIX:
+    name: 大阪关西
+    cc: JP
+  ICN:
+    name: 首尔仁川
+    cc: KR
+  BKK:
+    name: 曼谷素万那普
+    cc: TH
+  DMK:
+    name: 曼谷廊曼
+    cc: TH
+  SIN:
+    name: 新加坡樟宜
+    cc: SG
+  KUL:
+    name: 吉隆坡
+    cc: MY
+  DPS:
+    name: 巴厘岛登巴萨
+    cc: ID
+  SGN:
+    name: 胡志明市
+    cc: VN
+  MNL:
+    name: 马尼拉
+    cc: PH
+  JFK:
+    name: 纽约肯尼迪
+    cc: US
+  EWR:
+    name: 纽约纽瓦克
+    cc: US
+  LAX:
+    name: 洛杉矶
+    cc: US
+  SFO:
+    name: 旧金山
+    cc: US
+  ORD:
+    name: 芝加哥奥黑尔
+    cc: US
+  YYZ:
+    name: 多伦多皮尔逊
+    cc: CA
+  YVR:
+    name: 温哥华
+    cc: CA
+  SYD:
+    name: 悉尼
+    cc: AU
+  MEL:
+    name: 墨尔本
+    cc: AU
+  AKL:
+    name: 奥克兰
+    cc: NZ
+  CDG:
+    name: 巴黎戴高乐
+    cc: FR
+  LHR:
+    name: 伦敦希思罗
+    cc: GB
+  FRA:
+    name: 法兰克福
+    cc: DE
+  MUC:
+    name: 慕尼黑
+    cc: DE
+  FCO:
+    name: 罗马菲乌米奇诺
+    cc: IT
+  AMS:
+    name: 阿姆斯特丹
+    cc: NL
+  MAD:
+    name: 马德里
+    cc: ES
+  SVO:
+    name: 莫斯科谢列梅捷沃
+    cc: RU
+  IST:
+    name: 伊斯坦布尔
+    cc: TR
+  DXB:
+    name: 迪拜
+    cc: AE
+  DOH:
+    name: 多哈
+    cc: QA
+  CAI:
+    name: 开罗
+    cc: EG
+airport_tz:
+  PEK: Asia/Shanghai
+  PKX: Asia/Shanghai
+  SHA: Asia/Shanghai
+  PVG: Asia/Shanghai
+  CAN: Asia/Shanghai
+  SZX: Asia/Shanghai
+  CTU: Asia/Shanghai
+  TFU: Asia/Shanghai
+  KMG: Asia/Kunming
+  HGH: Asia/Shanghai
+  XIY: Asia/Shanghai
+  WUH: Asia/Shanghai
+  NKG: Asia/Shanghai
+  XMN: Asia/Shanghai
+  TAO: Asia/Shanghai
+  CKG: Asia/Shanghai
+  CSX: Asia/Shanghai
+  SYX: Asia/Shanghai
+  HRB: Asia/Shanghai
+  URC: Asia/Urumqi
+  HKG: Asia/Hong_Kong
+  MFM: Asia/Macau
+  TPE: Asia/Taipei
+  NRT: Asia/Tokyo
+  HND: Asia/Tokyo
+  KIX: Asia/Tokyo
+  ICN: Asia/Seoul
+  BKK: Asia/Bangkok
+  DMK: Asia/Bangkok
+  SIN: Asia/Singapore
+  KUL: Asia/Kuala_Lumpur
+  DPS: Asia/Makassar
+  SGN: Asia/Ho_Chi_Minh
+  MNL: Asia/Manila
+  JFK: America/New_York
+  EWR: America/New_York
+  LAX: America/Los_Angeles
+  SFO: America/Los_Angeles
+  ORD: America/Chicago
+  YYZ: America/Toronto
+  YVR: America/Vancouver
+  SYD: Australia/Sydney
+  MEL: Australia/Melbourne
+  AKL: Pacific/Auckland
+  CDG: Europe/Paris
+  LHR: Europe/London
+  FRA: Europe/Berlin
+  MUC: Europe/Berlin
+  FCO: Europe/Rome
+  AMS: Europe/Amsterdam
+  MAD: Europe/Madrid
+  SVO: Europe/Moscow
+  IST: Europe/Istanbul
+  DXB: Asia/Dubai
+  DOH: Asia/Qatar
+  CAI: Africa/Cairo

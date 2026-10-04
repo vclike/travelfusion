@@ -1,0 +1,298 @@
+cities:
+  成都:
+    lat: 30.5728
+    lon: 104.0668
+    country: CN
+    iata: CTU
+    tz: Asia/Shanghai
+  乐山:
+    lat: 29.5521
+    lon: 103.7656
+    country: CN
+  北京:
+    lat: 39.9042
+    lon: 116.4074
+    country: CN
+    iata: BJS
+    tz: Asia/Shanghai
+  上海:
+    lat: 31.2304
+    lon: 121.4737
+    country: CN
+    iata: SHA
+    tz: Asia/Shanghai
+  广州:
+    lat: 23.1291
+    lon: 113.2644
+    country: CN
+    iata: CAN
+    tz: Asia/Shanghai
+  深圳:
+    lat: 22.5431
+    lon: 114.0579
+    country: CN
+    iata: SZX
+    tz: Asia/Shanghai
+  西安:
+    lat: 34.3416
+    lon: 108.9398
+    country: CN
+    iata: SIA
+    tz: Asia/Shanghai
+  昆明:
+    lat: 24.8801
+    lon: 102.8329
+    country: CN
+    iata: KMG
+    tz: Asia/Shanghai
+  重庆:
+    lat: 29.563
+    lon: 106.5516
+    country: CN
+    iata: CKG
+    tz: Asia/Shanghai
+  杭州:
+    lat: 30.2741
+    lon: 120.1551
+    country: CN
+    iata: HGH
+    tz: Asia/Shanghai
+  武汉:
+    lat: 30.5928
+    lon: 114.3055
+    country: CN
+    iata: WUH
+    tz: Asia/Shanghai
+  南京:
+    lat: 32.0603
+    lon: 118.7969
+    country: CN
+    iata: NKG
+    tz: Asia/Shanghai
+  天津:
+    lat: 39.3434
+    lon: 117.3616
+    country: CN
+    tz: Asia/Shanghai
+  长沙:
+    lat: 28.2282
+    lon: 112.9388
+    country: CN
+    iata: CSX
+    tz: Asia/Shanghai
+  郑州:
+    lat: 34.7466
+    lon: 113.6254
+    country: CN
+    iata: CGO
+    tz: Asia/Shanghai
+  青岛:
+    lat: 36.0671
+    lon: 120.3826
+    country: CN
+    iata: TAO
+    tz: Asia/Shanghai
+  哈尔滨:
+    lat: 45.8038
+    lon: 126.535
+    country: CN
+    iata: HRB
+    tz: Asia/Shanghai
+  乌鲁木齐:
+    lat: 43.8256
+    lon: 87.6168
+    country: CN
+    iata: URC
+    tz: Asia/Urumqi
+  拉萨:
+    lat: 29.652
+    lon: 91.1721
+    country: CN
+  海口:
+    lat: 20.0444
+    lon: 110.1999
+    country: CN
+    iata: HAK
+  三亚:
+    lat: 18.2528
+    lon: 109.5119
+    country: CN
+    iata: SYX
+    tz: Asia/Shanghai
+  厦门:
+    lat: 24.4798
+    lon: 118.0894
+    country: CN
+    iata: XMN
+    tz: Asia/Shanghai
+  香港:
+    lat: 22.3193
+    lon: 114.1694
+    country: HK
+    iata: HKG
+    tz: Asia/Hong_Kong
+  台北:
+    lat: 25.033
+    lon: 121.5654
+    country: TW
+    iata: TPE
+    tz: Asia/Taipei
+  东京:
+    lat: 35.6762
+    lon: 139.6503
+    country: JP
+    iata: TYO
+    tz: Asia/Tokyo
+  首尔:
+    lat: 37.5665
+    lon: 126.978
+    country: KR
+    iata: SEL
+    tz: Asia/Seoul
+  曼谷:
+    lat: 13.7563
+    lon: 100.5018
+    country: TH
+    iata: BKK
+    tz: Asia/Bangkok
+  新加坡:
+    lat: 1.3521
+    lon: 103.8198
+    country: SG
+    iata: SIN
+    tz: Asia/Singapore
+  伦敦:
+    lat: 51.5074
+    lon: -0.1278
+    country: GB
+    iata: LON
+    tz: Europe/London
+  巴黎:
+    lat: 48.8566
+    lon: 2.3522
+    country: FR
+    iata: PAR
+    tz: Europe/Paris
+  纽约:
+    lat: 40.7128
+    lon: -74.006
+    country: US
+    iata: NYC
+    tz: America/New_York
+  大连:
+    lat: 38.914
+    lon: 121.6147
+    country: CN
+    iata: DLC
+  福州:
+    lat: 26.0745
+    lon: 119.2965
+    country: CN
+    iata: FOC
+    tz: Asia/Shanghai
+  贵阳:
+    lat: 26.647
+    lon: 106.6302
+    country: CN
+    iata: KWE
+    tz: Asia/Shanghai
+  南宁:
+    lat: 22.817
+    lon: 108.3665
+    country: CN
+    iata: NNG
+    tz: Asia/Shanghai
+  桂林:
+    lat: 25.2742
+    lon: 110.2902
+    country: CN
+    iata: KWL
+  兰州:
+    lat: 36.0611
+    lon: 103.8343
+    country: CN
+    iata: LHW
+    tz: Asia/Shanghai
+  长春:
+    lat: 43.8171
+    lon: 125.3235
+    country: CN
+    iata: CGQ
+  合肥:
+    lat: 31.8206
+    lon: 117.2272
+    country: CN
+    iata: HFE
+    tz: Asia/Shanghai
+  宁波:
+    lat: 29.8683
+    lon: 121.544
+    country: CN
+    iata: NGB
+  珠海:
+    lat: 22.2707
+    lon: 113.5767
+    country: CN
+    iata: ZUH
+  西宁:
+    lat: 36.6171
+    lon: 101.7782
+    country: CN
+    iata: XNN
+  清迈:
+    lat: 18.7669
+    lon: 98.9626
+    country: TH
+    iata: CNX
+    tz: Asia/Bangkok
+  普吉:
+    lat: 7.8804
+    lon: 98.3923
+    country: TH
+    iata: HKT
+    tz: Asia/Bangkok
+  大阪:
+    lat: 34.6937
+    lon: 135.5023
+    country: JP
+    iata: OSA
+    tz: Asia/Tokyo
+  悉尼:
+    lat: -33.8688
+    lon: 151.2093
+    country: AU
+    iata: SYD
+    tz: Australia/Sydney
+  洛杉矶:
+    lat: 34.0522
+    lon: -118.2437
+    country: US
+    iata: LAX
+    tz: America/Los_Angeles
+  法兰克福:
+    lat: 50.1109
+    lon: 8.6821
+    country: DE
+    iata: FRA
+    tz: Europe/Berlin
+  芭提雅:
+    lat: 12.9236
+    lon: 100.8825
+    country: TH
+    tz: Asia/Bangkok
+  京都:
+    lat: 35.0116
+    lon: 135.7681
+    country: JP
+    tz: Asia/Tokyo
+  罗马:
+    lat: 41.9028
+    lon: 12.4964
+    country: IT
+    tz: Europe/Rome
+  札幌:
+    lat: 43.0621
+    lon: 141.3543
+    country: JP
+    iata: CTS
+    tz: Asia/Tokyo

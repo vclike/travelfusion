@@ -1,0 +1,23 @@
+# iStoreOS 部署：Docker → Compose（或 iStore Docker UI 导入本文件）
+# LAN 内端口 8900（避开 searchfusion 8899）；DSH 侧 MCP 地址 http://<路由器IP>:8900/mcp
+# iStoreOS 防火墙默认拒绝 WAN 入站 → 端口天然仅 LAN 可达（MCP 无鉴权，勿手动放行 WAN）
+services:
+  travelfusion:
+    image: travelfusion:0.2.0
+    container_name: travelfusion
+    restart: unless-stopped
+    ports:
+      - "8900:8900"
+    volumes:
+      - ./data:/app/data          # SQLite 账本/缓存 + manifests/kb/keys —— 持久化
+    environment:
+      - TF_DATA_DIR=/app/data
+      - TF_MONTHLY_PAID_BUDGET_CNY=20
+      - TF_CONFIRM_THRESHOLD_CNY=3
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8900/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

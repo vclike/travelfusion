@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Me</title>
+    <script>
+      /* Travelpayouts Drive verification snippet (site t=579428) */
+      (function () {
+          var script = document.createElement("script");
+          script.async = 1;
+          script.src = 'https://tpembars.com/NTc5NDI4.js?t=579428';
+          document.head.appendChild(script);
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&family=Noto+Serif+SC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #050505;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Subtle noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* Floating particles */
+        .particle {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .particle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; top: 80%; animation-delay: 1s; }
+        .particle:nth-child(3) { left: 80%; top: 30%; animation-delay: 2s; }
+        .particle:nth-child(4) { left: 90%; top: 70%; animation-delay: 3s; }
+        .particle:nth-child(5) { left: 50%; top: 10%; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+            50% { transform: translateY(-20px) scale(1.5); opacity: 0.6; }
+        }
+
+        .container {
+            text-align: center;
+            padding: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Tag line at top */
+        .tag {
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            color: rgba(255, 255, 255, 0.25);
+            margin-bottom: 4rem;
+            text-transform: uppercase;
+            animation: fadeIn 1s ease-out 0.2s both;
+        }
+
+        /* English title with typing effect */
+        .title-en {
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .title-en span {
+            display: inline-block;
+            animation: typing 1.5s steps(20) 0.5s both;
+        }
+
+        @keyframes typing {
+            from { width: 0; opacity: 0; }
+            to { width: 100%; opacity: 1; }
+        }
+
+        .subtitle-en {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+            margin-bottom: 3rem;
+            animation: fadeIn 1s ease-out 2s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* QR Code with glow effect */
+        .qr-wrapper {
+            position: relative;
+            display: inline-block;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            animation: fadeIn 1s ease-out 2.5s both;
+        }
+
+        .qr-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .qr-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+        }
+
+        .qr-border::before,
+        .qr-border::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .qr-border::before {
+            top: -1px;
+            left: -1px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .qr-border::after {
+            bottom: -1px;
+            right: -1px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .qr-img {
+            width: clamp(160px, 40vw, 200px);
+            height: clamp(160px, 40vw, 200px);
+            display: block;
+            position: relative;
+            z-index: 1;
+            image-rendering: pixelated;
+        }
+
+        /* Scan line animation */
+        .scan-line {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            right: 2rem;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: scan 3s ease-in-out infinite;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0%, 100% { top: 2rem; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: calc(100% - 2rem); opacity: 0; }
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeIn 1s ease-out 3s both;
+        }
+
+        .divider-line {
+            width: 40px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        .divider-dot {
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+        }
+
+        /* Chinese text */
+        .title-cn {
+            font-family: 'Noto Serif SC', serif;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+            animation: fadeIn 1s ease-out 3.5s both;
+        }
+
+        .subtitle-cn {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.4);
+            animation: fadeIn 1s ease-out 4s both;
+        }
+
+        /* Corner marks */
+        .corner-mark {
+            position: fixed;
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 0.1em;
+            animation: fadeIn 1s ease-out 4.5s both;
+        }
+
+        .corner-mark.top-left {
+            top: 2rem;
+            left: 2rem;
+        }
+
+        .corner-mark.top-right {
+            top: 2rem;
+            right: 2rem;
+        }
+
+        .corner-mark.bottom-left {
+            bottom: 2rem;
+            left: 2rem;
+        }
+
+        .corner-mark.bottom-right {
+            bottom: 2rem;
+            right: 2rem;
+        }
+
+        /* Deerflow signature */
+        .deerflow {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.15);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            animation: fadeIn 1s ease-out 5s both;
+        }
+
+        .deerflow:hover {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 480px) {
+            .container {
+                padding: 2rem;
+            }
+
+            .tag {
+                margin-bottom: 3rem;
+            }
+
+            .qr-wrapper {
+                padding: 1.5rem;
+            }
+
+            .corner-mark {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating particles -->
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+
+    <!-- Corner marks -->
+    <div class="corner-mark top-left">01</div>
+    <div class="corner-mark top-right">02</div>
+    <div class="corner-mark bottom-left">03</div>
+    <div class="corner-mark bottom-right">04</div>
+
+    <div class="container">
+        <div class="tag">/// contact</div>
+
+        <div class="title-en">
+            <span>Blog offline, life online.</span>
+        </div>
+        <div class="subtitle-en">Scan the QR code, we chat.</div>
+
+        <div class="qr-wrapper">
+            <div class="qr-border"></div>
+            <div class="scan-line"></div>
+            <img src="/index/wechat-qr.png" alt="WeChat QR Code" class="qr-img">
+        </div>
+
+        <div class="divider">
+            <div class="divider-line"></div>
+            <div class="divider-dot"></div>
+            <div class="divider-line"></div>
+        </div>
+
+        <div class="title-cn">博客下线，生活在线。</div>
+        <div class="subtitle-cn">扫码，微信见。</div>
+    </div>
+
+    <a href="https://deerflow.tech" target="_blank" class="deerflow">CREATED BY DEERFLOW</a>
+</body>
+</html>
