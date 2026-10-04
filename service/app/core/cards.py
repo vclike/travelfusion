@@ -341,12 +341,28 @@ def _downsample(shape: list, max_pts: int = 60) -> list:
     return [shape[round(i * step)] for i in range(max_pts)]
 
 
-def _amap_static_url(shape: list, key: str) -> str | None:
+def _fit_zoom(lats: list, lngs: list, width_px: int = 400,
+              height_px: int = 130) -> int:
+    """按包围盒自适应 zoom：floor + 15% 边距（给端点标注留空间）。
+
+    2026-10-04 修复：此前 round() 会向上取整——视野恰好差一点，路线被裁切
+    （成都绕城 0.148° 经度跨度在 z12 只容 0.137°）。纬度按画幅宽高比折算。
+    """
+    lat_span = (max(lats) - min(lats)) or 1e-4
+    lng_span = (max(lngs) - min(lngs)) or 1e-4
+    m = 1.15
+    span = max(lng_span * m, lat_span * m * (width_px / height_px))
+    zoom = math.floor(math.log2(360.0 * width_px / (256.0 * span)))
+    return max(4, min(17, zoom))
+
+
+def _amap_static_url(shape: list, key: str, zoom_bias: int = 0,
+                     zoom_fixed: int | None = None) -> str | None:
     """高德静态地图 URL：真实底图 + 路径折线 + 起终点标注。
 
     shape 为 WGS-84 [lat,lng] 序列——逐点转 GCJ-02 对齐高德底图；
     境外点 wgs2gcj 原样透传（境内路线不涉及）。任何异常返回 None，
-    客户端回退 SVG 折线。
+    客户端回退 SVG 折线。zoom_bias/zoom_fixed 服务于比例尺切换档位。
     """
     try:
         pts = _downsample([s for s in shape
@@ -359,8 +375,9 @@ def _amap_static_url(shape: list, key: str) -> str | None:
         lngs = [p[1] for p in gcj]
         clat = (min(lats) + max(lats)) / 2
         clng = (min(lngs) + max(lngs)) / 2
-        span = max(max(lngs) - min(lngs), (max(lats) - min(lats)) * 3.0) or 1e-4
-        zoom = max(4, min(17, round(math.log2(360.0 * 400 / (256.0 * span)))))
+        zoom = (_fit_zoom(lats, lngs) if zoom_fixed is None
+                else max(4, min(17, zoom_fixed)))
+        zoom = max(4, min(17, zoom + zoom_bias))
         o, dpt = gcj[0], gcj[-1]
         return ("https://restapi.amap.com/v3/staticmap"
                 f"?location={clng:.6f},{clat:.6f}&zoom={zoom}"
@@ -433,11 +450,22 @@ def route_card(out: dict, *, o_name: str, d_name: str, o: dict, d: dict,
             "lines": [{"from": 1, "to": 2, "mode": mode,
                        "label": f"{data.get('distance_km')}km·{data.get('duration_min')}min"}],
         }
-    # 静态地图（境内 + 有真实折线）：高德底图上叠路线，客户端 img 失败回退 SVG
+    # 静态地图（境内 + 有真实折线）：高德底图上叠路线，客户端 img 失败回退 SVG；
+    # static_urls 附 out/fit/in 三档 zoom 供客户端比例尺切换
     if not intl and payload.get("shape"):
         _key = provider_key(data_dir(), "amap")
         if _key:
             payload["static_url"] = _amap_static_url(payload["shape"], _key)
+            _pts = [s for s in payload["shape"]
+                    if isinstance(s, (list, tuple)) and len(s) == 2]
+            if len(_pts) >= 2:
+                _z = _fit_zoom([s[0] for s in _pts], [s[1] for s in _pts])
+                payload["static_urls"] = {
+                    "out": _amap_static_url(payload["shape"], _key,
+                                            zoom_fixed=max(4, _z - 1)),
+                    "fit": payload["static_url"],
+                    "in": _amap_static_url(payload["shape"], _key,
+                                           zoom_fixed=min(17, _z + 1))}
     # 导航深链动作（route 卡渲染进 foot）
     actions = _nav_actions(o, d, o_name, d_name, intl, mode)
     # 过路费自相矛盾：收费里程长但费用为 0 → 打标（v5 cost.tolls 偶发漏报）

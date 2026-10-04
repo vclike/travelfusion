@@ -39,3 +39,25 @@ def test_amap_static_url_downsamples_long_shape():
 
 def test_amap_static_url_rejects_degenerate_shape():
     assert cards._amap_static_url([[30.0, 104.0]], "k") is None
+
+
+def test_fit_zoom_covers_full_route():
+    """成都绕城实例：fit zoom 的视野必须完整覆盖路线包围盒（修 round 裁切）。"""
+    shape = [[30.5467, 104.0884], [30.6158, 104.2363]]  # 实测军安卫士→东安湖包围盒
+    z = cards._fit_zoom([s[0] for s in shape], [s[1] for s in shape])
+    w_cov = 360.0 * 400 / (256.0 * 2 ** z)
+    h_cov = 360.0 * 130 / (256.0 * 2 ** z)
+    assert w_cov >= (0.2363 - 0.0884) * 1.1
+    assert h_cov >= (0.6158 - 0.5467) * 1.1
+    assert z == 11
+
+
+def test_static_urls_three_levels():
+    shape = [[30.5467, 104.0884], [30.6158, 104.2363]]
+    z = cards._fit_zoom([s[0] for s in shape], [s[1] for s in shape])
+    u_fit = cards._amap_static_url(shape, "k")
+    u_out = cards._amap_static_url(shape, "k", zoom_fixed=max(4, z - 1))
+    u_in = cards._amap_static_url(shape, "k", zoom_fixed=min(17, z + 1))
+    assert f"zoom={z}" in u_fit
+    assert f"zoom={z - 1}" in u_out
+    assert f"zoom={z + 1}" in u_in
