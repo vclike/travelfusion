@@ -656,3 +656,50 @@ def quota_card(out: dict) -> None:
                      {"rows": rows, "paid": data.get("paid")}, meta={})
     card["id"] = stage_card(card)
     out.setdefault("meta", {})["card"] = card
+
+
+# ---------------------------------------------------- 旅程规划三卡（v0.4 新增）
+def plan_days_card(out: dict, *, city: str, days: list[dict]) -> None:
+    """每日行程安排卡。days=[{label:"D1 10-18(日) 落地半日",
+    items:[{name, time?, minutes?, ticket_text?}], note?}]"""
+    payload = {"city": city, "days": days}
+    card = _envelope(
+        "plan.days", f"{city} · 每日行程", payload,
+        notices=[{"level": "info", "icon": "anchor",
+                  "text": "时长/开闭园/门票来自 ChinaTravel 快照，门票以现场为准"}])
+    card["id"] = stage_card(card)
+    out.setdefault("meta", {})["card"] = card
+
+
+def hotel_select_card(out: dict, *, city: str, check_in: str,
+                      hotels: list[dict]) -> None:
+    """酒店推荐卡（bookingUrl 已含推广归因）。hotels 为 rollinggo 归一化结构。"""
+    payload = {"city": city, "check_in": check_in, "hotels": hotels}
+    card = _envelope(
+        "hotel.select", f"{city} · 酒店推荐（{check_in} 入住）", payload,
+        notices=[{"level": "info", "icon": "anchor",
+                  "text": "价格为参考展示价，实际以锁价确认为准；预订链接已含推广归因"}])
+    card["id"] = stage_card(card)
+    out.setdefault("meta", {})["card"] = card
+
+
+def flight_rec_card(out: dict, *, od_text: str, date: str,
+                    flights: list[dict], dep_iata: str = "",
+                    arr_iata: str = "") -> None:
+    """航班推荐卡（远期班次：时刻表聚合候选 + 官网核验按钮）。
+    flights=[{no, dep_t, arr_t, craft?, note?}]；核验按钮按分流规则走携程班表页。"""
+    payload = {"od": od_text, "date": date, "flights": flights}
+    actions = []
+    if dep_iata and arr_iata:
+        actions.append({
+            "label": "航线班表核验",
+            "url": f"https://flights.ctrip.com/schedule/"
+                   f"{dep_iata.lower()}-{arr_iata.lower()}.html"})
+    card = _envelope(
+        "flight.rec", f"{od_text} · {date} 推荐班次", payload,
+        notices=[{"level": "info", "icon": "anchor",
+                  "text": "班期来自航司时刻表聚合（未到 ±10h 实时窗）——"
+                          "出发前 24h 需实时终验"}],
+        actions=actions)
+    card["id"] = stage_card(card)
+    out.setdefault("meta", {})["card"] = card

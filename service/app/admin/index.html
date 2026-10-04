@@ -107,6 +107,14 @@ footer{color:var(--tx2);font-size:11px;text-align:center;padding:6px 0 10px}
   <!-- ② API 凭证 -->
   <section class="sect">
     <h2><span class="n">②</span>API 凭证 <span style="flex:1"></span><span class="hint">逐行保存 · 掩码回显</span></h2>
+    <div class="keyrow" style="margin-bottom:10px">
+      <div class="top"><b>RollingGo 账号（酒店检索）</b><span class="badge state" id="rghBadge">检查中…</span></div>
+      <div class="inputline">
+        <button class="btn mini pri" id="rghLogin">发起授权</button>
+        <button class="btn mini" id="rghLogout">退出登录</button>
+      </div>
+      <div class="hint" id="rghHint">授权后酒店检索可用；token 保存在本服务端，不经过第三方。</div>
+    </div>
     <div id="keyList"></div>
   </section>
 
@@ -351,6 +359,41 @@ async function saveProfile() {
   toast("出行档案已保存");
 }
 
+/* ============ RollingGo 登录（面板原生 OAuth） ============ */
+async function rghStatus() {
+  try {
+    const s = await api("/admin/api/rgh/status");
+    const b = $("rghBadge");
+    b.textContent = s.logged_in ? "已登录" : "未登录";
+    b.className = "badge state" + (s.logged_in ? " ok" : "");
+  } catch { /* 演示模式或网络异常静默 */ }
+}
+$("rghLogin").onclick = async () => {
+  try {
+    const r = await api("/admin/api/rgh/login", { method: "POST" });
+    const hint = $("rghHint");
+    hint.innerHTML = `请在新标签完成授权：<a href="${r.short_url}" target="_blank" style="color:var(--acc)">${r.short_url}</a>（数分钟内有效），完成后本页自动检测`;
+    const timer = setInterval(async () => {
+      try {
+        const s = await api("/admin/api/rgh/login/status");
+        if (s.status === "success") {
+          clearInterval(timer);
+          hint.textContent = "✓ 授权成功——酒店检索已可用";
+          hint.style.color = "var(--ok)";
+          rghStatus(); toast("RollingGo 授权成功");
+        } else if (s.status === "expired" || s.status === "not_started") {
+          clearInterval(timer);
+          hint.textContent = s.status === "expired" ? "授权会话过期——请重新发起授权" : hint.textContent;
+        }
+      } catch { /* 轮询失败继续等 */ }
+    }, 2500);
+  } catch (e) { toast("发起授权失败：" + e.message, "bad"); }
+};
+$("rghLogout").onclick = async () => {
+  try { await api("/admin/api/rgh/logout", { method: "POST" }); rghStatus(); toast("已退出 RollingGo"); }
+  catch (e) { toast(e.message, "bad"); }
+};
+
 /* ============ 登录门 ============ */
 function showLogin() {
   if (document.getElementById("loginGate")) return;
@@ -387,6 +430,7 @@ function bootWith(cfg) {
   S.providers = cfg.providers || {};
   S.negmarks = cfg.negmarks || [];
   renderProfile(); renderKeys(); renderSwitches(); renderNeg();
+  if (LIVE) rghStatus(); else { const b = $("rghBadge"); b.textContent = "未登录（演示）"; }
 }
 if (LIVE) {
   api("/admin/api/config").then(bootWith).catch(() => showLogin());

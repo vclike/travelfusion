@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from app.config import APP_DIR, data_dir
 from app.core import keys as _keysmod
 from app.core import negmark as _negmark, profile as _profile, registry as _registry
+from app.core import rollinggo as _rgh
 
 router = APIRouter(prefix="/admin")
 
@@ -183,6 +184,33 @@ def admin_provider_enabled(provider: str, request: Request, body: dict) -> dict:
     e["status"] = "active" if (body or {}).get("enabled") else "disabled"
     _registry.save(dd / "manifests.json", man)
     return {"ok": True, "status": e["status"]}
+
+
+@router.get("/api/rgh/status")
+def admin_rgh_status(request: Request) -> dict:
+    """RollingGo 登录状态（token 文件存在且含 access_token）。"""
+    _admin_guard(request)
+    return {"logged_in": _rgh.logged_in(data_dir())}
+
+
+@router.post("/api/rgh/login")
+def admin_rgh_login(request: Request) -> dict:
+    """发起 RollingGo OAuth：返回授权链接（面板展示给用户点开）。"""
+    _admin_guard(request)
+    return _rgh.start_login(data_dir())
+
+
+@router.get("/api/rgh/login/status")
+def admin_rgh_login_status(request: Request) -> dict:
+    """授权轮询：前端每 2-3 秒调一次；success 时服务端已收下 token。"""
+    _admin_guard(request)
+    return _rgh.login_status(data_dir())
+
+
+@router.post("/api/rgh/logout")
+def admin_rgh_logout(request: Request) -> dict:
+    _admin_guard(request)
+    return {"ok": _rgh.logout(data_dir())}
 
 
 @router.get("/api/negmarks")

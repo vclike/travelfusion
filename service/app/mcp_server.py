@@ -18,6 +18,7 @@ from app.core import airline_kb as kb_store
 from app.core import attribution, canon, cards, chinatravel, dispatch, eligibility, ledger
 from app.core import negmark, registry
 from app.core import profile as _profile_mod
+from app.core import rollinggo as _rgh
 from app.core.chinatravel import get_store as _china_get_store
 from app.core.tzcn import today_cn  # B3 修复：缺省日期一律按北京时间
 
@@ -718,7 +719,49 @@ def route_ground(origin: str, destination: str, mode: str = "auto",
     return out
 
 
-# ------------------------------------------------------------ 9 weather_context
+# ---------------------------------------------------------- 8b hotel_search
+@mcp.tool()
+def hotel_search(origin_query: str, place: str, place_type: str = "城市",
+                 check_in_date: str = "", stay_nights: int = 1,
+                 adult_count: int = 2, size: int = 5,
+                 star_ratings: str = "", max_price: float = 0) -> dict:
+    """酒店检索（RollingGo 实时可订）：返回酒店名/星级/参考价/地址/可订链接。
+    链接已由服务端强制附加推广归因；展示价注明"参考价"，实际以锁价为准。
+    锁价与下单走 rollinggo-hotel-booking 技能（人工两步确认）。"""
+    try:
+        hotels = _rgh.search_hotels(
+            data_dir(), origin_query, place, place_type, check_in_date,
+            stay_nights, adult_count, size, star_ratings, max_price)
+    except _rgh.RghError as e:
+        return canon.error(canon.E_DATA_UNAVAILABLE, hint=e.message)
+    except ValueError as e:
+        return canon.error(canon.E_NOT_APPLICABLE, hint=str(e))
+    out = {"data": {"hotels": hotels, "count": len(hotels)},
+           "meta": {"notes": ["价格为参考展示价，实际以锁价确认为准",
+                              "bookingUrl 已含推广归因"]}}
+    cards.hotel_select_card(out, city=place, check_in=check_in_date or "待定",
+                            hotels=hotels)
+    return out
+
+
+# ---------------------------------------------------------- 8c flight_rec
+@mcp.tool()
+def flight_rec(dep_city: str, arr_city: str, date: str,
+               flights: list[dict], dep_iata: str = "", arr_iata: str = "") -> dict:
+    """航班推荐卡（远期班次）：候选来自班表聚合/航司时刻表，本工具只负责
+    以卡片呈现并附官网核验按钮。flights=[{no, dep_t, arr_t, craft?, note?}]，
+    按推荐序排列。日期 ≤ 今日+7 时请改用 flight_status_batch 做实时核验。"""
+    if not flights:
+        return canon.error(canon.E_NO_MATCH, hint="flights 候选列表不能为空")
+    out = canon.ok({"dep": dep_city, "arr": arr_city, "date": date})
+    cards.flight_rec_card(out, od_text=f"{dep_city} → {arr_city}", date=date,
+                          flights=flights, dep_iata=dep_iata,
+                          arr_iata=arr_iata)
+    return {"data": {"count": len(flights)},
+            "meta": {"card": out["meta"]["card"],
+                     "notes": ["推荐卡已生成；出发前 24h 用 flight_status_batch 终验"]}}
+
+
 @mcp.tool()
 def weather_context(location: str, date: str = "") -> dict:
     """天气上下文：≤16 天 → 预报层（逐日）；>16 天 → 气候常态层（月度投影）。
@@ -835,11 +878,13 @@ def attraction_search(city: str, keyword: str = "") -> dict:
 # ----------------------------------------------------------- 14 plan_validate
 @mcp.tool()
 def plan_validate(city: str, items: list[dict],
-                  day_start: str = "08:00", day_end: str = "18:00") -> dict:
+                  day_start: str = "08:00", day_end: str = "18:00",
+                  day_label: str = "") -> dict:
     """行程可行性校验（多日行程必调）：
     items=[{name, start_time?: 'HH:MM', end_time?: 'HH:MM', minutes?: 数}]。
     校验：景点存在性 / 开闭园冲突 / 建议游览时长 vs 排入时长 /
     当日合计 vs 时间窗。只出违规清单（advisory），绝不改行程。
+    传 day_label（如 "D1 10-18(日) 落地半日"）时额外产出每日行程安排卡。
     知识库未覆盖的城市返回 skipped 说明——按通用规则排程。"""
     if not city.strip() or not items:
         return canon.error(canon.E_NO_MATCH,
@@ -867,4 +912,13 @@ def plan_validate(city: str, items: list[dict],
                            notices=notices)
     card["id"] = cards.stage_card(card)
     out.setdefault("meta", {})["card"] = card
+    if day_label:   # 安排卡后入暂存：时间窗自取时排在可行性卡之后，语义为主卡
+        cards.plan_days_card(out, city=city, days=[{
+            "label": day_label,
+            "items": [{"name": str(x.get("name")),
+                       "time": " ~ ".join(filter(None, [x.get("start_time"),
+                                                         x.get("end_time")])),
+                       "minutes": x.get("minutes")}
+                      for x in items],
+        }])
     return out
