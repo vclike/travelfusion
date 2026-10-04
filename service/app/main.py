@@ -95,6 +95,8 @@ async def _baseline_loop():
         except Exception as e:                       # noqa: BLE001 采集失败不致命
             logging.getLogger("travelfusion.baseline").warning(
                 "baseline collect failed: %s", e)
+        # 2026-10-02 修复：等待由本循环自己负责（此前 sleep 误挂 _china_loop → 采集热循环）
+        await asyncio.sleep(max(1.0, interval_h) * 3600)
 
 
 async def _china_loop():
@@ -112,7 +114,7 @@ async def _china_loop():
             logging.getLogger("travelfusion.chinatravel").warning(
                 "chinatravel update failed: %s", e)
         await asyncio.sleep(86400)                   # 每日复查一次
-        await asyncio.sleep(collector.interval_hours(data_dir()) * 3600)
+        # 2026-10-02 修复：移除误挂在本循环的采集间隔 sleep（原为双重等待）
 
 
 app = FastAPI(title="travelfusion", version=__version__, lifespan=lifespan)
@@ -171,9 +173,15 @@ def get_staged_card(cid: str) -> dict:
 
 @app.get("/health")
 def health() -> dict:
+    # 2026-10-04 修复（B4）：工具数不再硬编码，运行时从 MCP 注册表动态取
+    try:
+        _tm = getattr(_mcp, "_tool_manager", None)
+        _n_tools = len(_tm.list_tools()) if _tm is not None else 0
+    except Exception:
+        _n_tools = 0
     return {"ok": True, "version": __version__,
             "data_dir": str(data_dir()),
-            "tools": "mcp://9",
+            "tools": f"mcp://{_n_tools}",
             "seeded_this_boot": getattr(app.state, "seeded", [])}
 
 

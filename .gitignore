@@ -7,3 +7,6 @@ service/data/
 *.parquet
 .scratch/
 
+.venv-test/
+.pip-tmp/
+

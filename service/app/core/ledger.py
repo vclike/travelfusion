@@ -81,19 +81,25 @@ class QuotaLedger:
     def consume_paid(self, provider: str, cny: float, calls: int = 1) -> float:
         """记付费消耗；返回累计 paid_cny。"""
         with _LOCK, self._conn() as c:
-            row = self._row(c, provider, "total")   # 付费账本挂 total，按月预算另行判定
-            total = row["paid_cny"] + cny
+            c.execute("UPDATE ledger SET provider=provider||'#legacy-total' "
+                      "WHERE period='total' AND paid_cny>0 "
+                      "AND provider NOT LIKE '%#legacy%'")
+            self._row(c, provider, "month")
+            c.execute("UPDATE ledger SET paid_cny=paid_cny+?, attempts=attempts+1, "
+                      "billed=billed+? WHERE provider=?", (cny, calls, provider))
+            row = self._row(c, provider, "month")
+            return float(row["paid_cny"])
             c.execute("UPDATE ledger SET paid_cny=paid_cny+?, attempts=attempts+1, "
                       "billed=billed+? WHERE provider=?", (cny, calls, provider))
             return total
 
     def paid_month_cny(self, month_key: str | None = None) -> float:
-        """本月付费消耗合计（跨 provider 汇总）。"""
+        """本月付费消耗合计（仅月度桶；total 桶不再混入当月）。"""
         key = month_key or _period_key("month", self.now_fn())
         with _LOCK, self._conn() as c:
             row = c.execute(
                 "SELECT COALESCE(SUM(paid_cny),0) s FROM ledger "
-                "WHERE period_key=? OR period='total'", (key,)).fetchone()
+                "WHERE period='month' AND period_key=?", (key,)).fetchone()
             return float(row["s"])
 
     def status(self) -> list[dict]:

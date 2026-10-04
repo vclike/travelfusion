@@ -73,6 +73,12 @@ def collect_once(data_dir: Path, settings=None) -> dict:
                  "code": out["error"]["code"]})
             continue
         prices = (out.get("data") or {}).get("prices") or []
+        # 2026-10-02 修复：缓存命中 = 同一观测的重复读取，不再写入新基线样本
+        if (out.get("meta") or {}).get("cache") == "hit":
+            summary["skipped"].append(
+                {"route": f"{r['origin']}→{r['destination']}",
+                 "code": "CACHE_HIT_NO_NEW_SAMPLE"})
+            continue
         n = baseline.record(p / "baseline.db", ocode, dcode, prices)
         summary["recorded"] += n
     baseline.prune(p / "baseline.db")

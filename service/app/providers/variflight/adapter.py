@@ -12,12 +12,14 @@ from __future__ import annotations
 
 from app.core.errors import ProviderError
 
+import ast
 import datetime as _dt
 
 import httpx
 
 from app.core.canon import (E_AUTH_REQUIRED, E_DATA_UNAVAILABLE,
                             E_NO_MATCH, E_QUOTA_LIMIT, E_UPSTREAM_FAILURE)
+from app.core.tzcn import today_cn  # B3：北京时间口径
 
 BASE = "https://ai.variflight.com/servers/aviation/mcp"
 _PROTO = "2025-03-26"
@@ -117,19 +119,72 @@ class Adapter:
             return self._price(query)
         raise ProviderError(E_DATA_UNAVAILABLE, f"variflight 未实现 {capability}", self.id)
 
+    @staticmethod
+    def _parse_flight_details(text: str) -> dict | None:
+        """从 MCP 文本载体提取 'Flight details: {...}' dict（受限 literal_eval，
+        不使用 eval；解析失败返回 None，由上层诚实标注而非猜字段）。"""
+        marker = "Flight details:"
+        i = text.find(marker)
+        if i < 0:
+            return None
+        try:
+            payload = ast.literal_eval(text[i + len(marker):].strip())
+        except (ValueError, SyntaxError, MemoryError, RecursionError):
+            return None
+        return payload if isinstance(payload, dict) else None
+
+    @staticmethod
+    def _iso_local(plan: str, tz_seconds) -> str | None:
+        """'YYYY-MM-DD HH:MM:SS' + 上游时区秒偏移 → ISO8601（无时区假设）。"""
+        try:
+            dt = _dt.datetime.strptime(str(plan).strip(), "%Y-%m-%d %H:%M:%S")
+            return dt.replace(tzinfo=_dt.timezone(
+                _dt.timedelta(seconds=int(tz_seconds)))).isoformat()
+        except (ValueError, TypeError, OverflowError):
+            return None
+
     def _status(self, q: dict) -> dict:
         fnum = str(q.get("flight_no") or "").strip().upper().replace(" ", "")
         if not fnum:
             raise ProviderError(E_NO_MATCH, "缺少航班号", self.id)
         args: dict = {"fnum": fnum}
         # VF 工具要求显式日期；缺省=今天（北京时间口径按其服务端为准）
-        args["date"] = q.get("date") or _dt.date.today().strftime("%Y-%m-%d")
+        args["date"] = q.get("date") or today_cn()
         out = self._call_tool("searchFlightsByNumber", args)
-        return {"data": {"flights": [{"source": "variflight",
-                                      "flight_no": fnum,
-                                      "raw_text": out["text"][:4000],
-                                      "structured": out["structured"]}],
-                         "coverage_note": "variflight 官方 MCP（付费校准源，raw 透传）"},
+        row: dict = {"source": "variflight", "flight_no": fnum,
+                     "raw_text": out["text"][:4000],
+                     "structured": out["structured"], "parse_ok": False}
+        # 2026-10-02 修复：付费结果必须在 provider 边界归一化——此前 raw 透传
+        # 导致上层航线过滤误杀真实航班（"航线不符"）。
+        payload = self._parse_flight_details(out["text"])
+        items = (payload or {}).get("data")
+        if isinstance(items, list) and items and isinstance(items[0], dict):
+            d0 = items[0]
+            row.update({
+                "parse_ok": True,
+                "dep_iata": str(d0.get("FlightDepcode") or "").strip().upper() or None,
+                "arr_iata": str(d0.get("FlightArrcode") or "").strip().upper() or None,
+                "airline_name": d0.get("FlightCompany") or None,
+                "dep_terminal": d0.get("FlightHTerminal") or None,
+                "arr_terminal": d0.get("FlightTerminal") or None,
+                "aircraft": d0.get("ftype") or None,
+                "state": d0.get("FlightState") or None})
+            dep_plan = d0.get("FlightDeptimePlanDate")
+            arr_plan = d0.get("FlightArrtimePlanDate")
+            duration = d0.get("FlightDuration")
+            row["times"] = {
+                "dep": {"scheduled_local": dep_plan or None,
+                        "scheduled_utc": self._iso_local(dep_plan,
+                                                         d0.get("org_timezone"))},
+                "arr": {"scheduled_local": arr_plan or None,
+                        "scheduled_utc": self._iso_local(arr_plan,
+                                                         d0.get("dst_timezone"))},
+                "duration_min": int(duration)
+                if str(duration or "").isdigit() else None,
+                "tz_source": "upstream org/dst_timezone"}
+        return {"data": {"flights": [row],
+                         "coverage_note": "variflight 官方 MCP（付费校准源；"
+                                          "已按上游时区归一化，raw 保留）"},
                 "cost_calls": 1}
 
     def _price(self, q: dict) -> dict:

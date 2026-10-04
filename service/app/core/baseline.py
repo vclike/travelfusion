@@ -29,7 +29,11 @@ def _conn(db_path: Path) -> sqlite3.Connection:
 
 def record(db_path: Path, origin: str, dest: str, prices: list[dict],
            source: str = "travelpayouts") -> int:
-    """从 flight.price 的 cached 价列表采集入库，返回写入行数。"""
+    """从 flight.price 的 cached 价列表采集入库，返回写入行数。
+
+    2026-10-02 增加幂等护栏：同 (航线,报价,币种,航司,出发时刻,过期时刻) 且
+    10 分钟内已入库的观测直接跳过——防调度异常再次制造重复样本。
+    """
     now = time.time()
     rows = [(origin.upper(), dest.upper(), now, float(p["amount"]),
              p.get("currency", "CNY"), p.get("airline_iata"),
@@ -37,11 +41,24 @@ def record(db_path: Path, origin: str, dest: str, prices: list[dict],
             for p in prices if p.get("amount") is not None]
     if not rows:
         return 0
+    inserted = 0
     with _LOCK, _conn(db_path) as c:
-        c.executemany("INSERT INTO baseline(origin,dest,captured_at,price,currency,"
+        for row in rows:
+            dup = c.execute(
+                "SELECT 1 FROM baseline WHERE origin=? AND dest=? AND price=? "
+                "AND currency=? AND IFNULL(airline,'')=IFNULL(?,'') "
+                "AND IFNULL(depart_at,'')=IFNULL(?,'') "
+                "AND IFNULL(expires_at,'')=IFNULL(?,'') AND source=? "
+                "AND captured_at>? LIMIT 1",
+                (row[0], row[1], row[3], row[4], row[5], row[6], row[7],
+                 row[8], now - 600)).fetchone()
+            if dup:
+                continue
+            c.execute("INSERT INTO baseline(origin,dest,captured_at,price,currency,"
                       "airline,depart_at,expires_at,source) VALUES(?,?,?,?,?,?,?,?,?)",
-                      rows)
-    return len(rows)
+                      row)
+            inserted += 1
+    return inserted
 
 
 def stats(db_path: Path, origin: str, dest: str, days: int = 90) -> dict | None:

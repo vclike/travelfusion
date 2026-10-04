@@ -330,8 +330,9 @@ def status_card(out: dict, *, date_given: bool = False) -> None:
 
 
 def route_card(out: dict, *, o_name: str, d_name: str, o: dict, d: dict,
-               intl: bool) -> None:
-    """route_ground → route.cn / route.intl（坐标齐全时附 route.map）。"""
+               intl: bool, degrade: list | None = None) -> None:
+    """route_ground → route.cn / route.intl（坐标齐全时附 route.map）。
+    degrade：地名解析降级说明（B5）——POI 未命中、按城市中心起算时如实告警。"""
     data = out.get("data") or {}
     if not data:
         return
@@ -368,7 +369,9 @@ def route_card(out: dict, *, o_name: str, d_name: str, o: dict, d: dict,
                        "label": f"{data.get('distance_km')}km·{data.get('duration_min')}min"}],
         }
     # 过路费自相矛盾：收费里程长但费用为 0 → 打标（v5 cost.tolls 偶发漏报）
-    route_notes: list[dict] = []
+    # degrade（B5）：地名解析降级说明排在最前
+    route_notes: list[dict] = [
+        {"level": "warn", "icon": "lint", "text": t} for t in (degrade or [])]
     if data.get("tolls_cny") == 0 and (data.get("toll_distance_km") or 0) > 50:
         route_notes.append({
             "level": "warn", "icon": "redeye",

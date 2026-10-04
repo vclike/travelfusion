@@ -12,7 +12,7 @@ from __future__ import annotations
 from app.core.errors import ProviderError
 
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -139,13 +139,48 @@ class Adapter:
             raise ProviderError(E_UPSTREAM_FAILURE, hint or code, self.id)
         return j.get("response") or []
 
+    @staticmethod
+    def _row_dep_local_date(row: dict) -> str | None:
+        """行计划起飞的机场当地日期（YYYY-MM-DD）；无时间戳/无效返回 None。
+
+        2026-10-02 修复：此前仅按班号取首行、不验日期——查明日可拿到今天
+        同名班次。当地日期 = dep_time_ts(UTC) + 机场时区偏移，偏移由
+        dep_time(当地 HH:MM) 与 dep_time_utc(UTC HH:MM) 之差推导。
+        """
+        ts = row.get("dep_time_ts")
+        if not ts:
+            return None
+        try:
+            dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+        except (ValueError, OSError, OverflowError):
+            return None
+        off_min = 0
+        loc, utc = row.get("dep_time"), row.get("dep_time_utc")
+        if isinstance(loc, str) and isinstance(utc, str) \
+                and len(loc) >= 5 and len(utc) >= 5:
+            try:
+                off_min = (int(loc[:2]) * 60 + int(loc[3:5])
+                           - int(utc[:2]) * 60 - int(utc[3:5])) % 1440
+            except ValueError:
+                off_min = 0
+        return (dt + timedelta(minutes=off_min)).date().isoformat()
+
     def _match(self, rows: list[dict], q: dict) -> dict | None:
-        if not q.get("flight_no"):
-            return rows[0] if rows else None
-        want = str(q["flight_no"]).strip().upper().replace(" ", "")
+        """按班号+航线+当地日期选行；无任何过滤条件时保持旧行为（取首行）。"""
+        want = str(q.get("flight_no") or "").strip().upper().replace(" ", "")
+        dep = str(q.get("dep_iata") or "").strip().upper()
+        arr = str(q.get("arr_iata") or "").strip().upper()
+        qdate = str(q.get("date") or "").strip()
         for f in rows:
-            if (f.get("flight_iata") or "").upper() == want:
-                return f
+            if want and (f.get("flight_iata") or "").upper() != want:
+                continue
+            if dep and (f.get("dep_iata") or "").upper() != dep:
+                continue
+            if arr and (f.get("arr_iata") or "").upper() != arr:
+                continue
+            if qdate and self._row_dep_local_date(f) not in (None, qdate):
+                continue
+            return f
         return None
 
     def _flight_status(self, q: dict) -> dict:
@@ -194,10 +229,19 @@ class Adapter:
                     raise
 
         if not sched_row and not fl_row:
+            if qdate == tomorrow:
+                # 2026-10-02 修复：明日班次尚未进入免费 10h 计划窗 ≠ 无此航班
+                raise ProviderError(
+                    E_NOT_VERIFIABLE_FREE,
+                    f"免费层暂无 {params.get('flight_iata') or '该班次'} 在 {qdate} 的"
+                    "计划记录（10h 计划窗未覆盖该时刻或当日不执飞）——"
+                    "起飞前 ≤10h 内再核，或 paid_calibrate=true 走付费校准", self.id)
+            detail = "; ".join(errors)
             raise ProviderError(
                 E_NO_MATCH,
-                "airlabs 当日无此航班（schedules≤10h 窗口；flights 当日）；"
-                + "; ".join(errors) if errors else "airlabs 当日无此航班")
+                "airlabs 免费窗内无此班次（schedules≤10h 计划窗；flights 当日实测）"
+                + (f"；{detail}" if detail else ""),
+                self.id)
 
         merged = _merge(sched_row, fl_row, params.get("flight_iata", ""))
         coverage = ("schedules+flights 双端点合并" if (sched_row and fl_row)

@@ -18,6 +18,7 @@ from app.core import airline_kb as kb_store
 from app.core import attribution, canon, cards, chinatravel, dispatch, eligibility, ledger
 from app.core import negmark, registry
 from app.core.chinatravel import get_store as _china_get_store
+from app.core.tzcn import today_cn  # B3 修复：缺省日期一律按北京时间
 
 china_store = _china_get_store(data_dir())
 
@@ -81,9 +82,8 @@ def _poi_cache_load() -> dict:
 
 
 def _poi_cache_put(name: str, rec: dict) -> None:
-    import datetime as _dtmod
     cache = _poi_cache_load()
-    rec = dict(rec, cached_at=_dtmod.date.today().isoformat())
+    rec = dict(rec, cached_at=today_cn())  # B3：北京时间戳
     cache[name] = rec
     try:
         (data_dir() / "poi_cache.json").write_text(
@@ -105,13 +105,26 @@ def _resolve_city(name: str) -> dict | None:
     if name in cities:
         return {"name": name, **cities[name]}
     n = name.strip()
+    # 2026-10-02：机场码直查（三字码 ∈ 城市表 iata 或 airports 成员，如 TFU/KHN）
+    if len(n) == 3 and n.isascii() and n.isalpha() and n.isupper():
+        for k, v in cities.items():
+            v = v or {}
+            if v.get("iata") == n:
+                return {"name": k, **v}
+            if n in (v.get("airports") or []):
+                base = cities.get(n) or {}
+                return {"name": k, "iata": n,
+                        "lat": base.get("lat") if base.get("lat") is not None
+                        else v.get("lat"),
+                        "lon": base.get("lon") if base.get("lon") is not None
+                        else v.get("lon"),
+                        "country": v.get("country", "CN"), "tz": v.get("tz")}
     # POI 精确缓存优先于城市表模糊匹配（"成都天府国际机场"不得被"成都"劫持）
     cached = _poi_cache_get(n)
     if cached and cached.get("lat"):
         return cached
-    hit = [k for k in cities if n and (n in k or k in n)]
-    if len(hit) == 1:
-        return {"name": hit[0], **cities[hit[0]]}
+    # 2026-10-04 修复（B5）：POI 搜索提到子串模糊匹配之前——"北京南站"⊃"北京"
+    # 曾被城市表劫持成市中心坐标且无任何告警；POI 命中后入缓存（TTL 30 天）。
     try:
         out = dispatch.call_capability(
             "poi.search", {"keywords": n, "policy": {}}, data_dir=data_dir())
@@ -124,6 +137,11 @@ def _resolve_city(name: str) -> dict | None:
                     "country": "CN", "poi": True}
     except Exception:
         pass
+    hit = [k for k in cities if n and (n in k or k in n)]
+    if len(hit) == 1:
+        # 走到模糊命中 = POI 未命中、地名被降级为城市——带 fuzzy 标记，
+        # 下游（route_card 等）据此出 warn，不再静默。
+        return {"name": hit[0], "fuzzy": True, **cities[hit[0]]}
     return None
 
 
@@ -272,8 +290,7 @@ def flight_status(flight_no: str = "", origin: str = "", destination: str = "",
     dep_f = (dep_iata or "").strip().upper()
     arr_f = (arr_iata or "").strip().upper()
     if not date:
-        import datetime as _dtmod
-        date = _dtmod.date.today().isoformat()   # 缺省强制当日口径（免费源缺省会返回最近完成班次）
+        date = today_cn()   # 缺省强制当日口径（北京时间——容器 UTC 时钟下 date.today 会差一天）
     if origin and destination and not flight_no:
         o, d = _resolve_city(origin), _resolve_city(destination)
         if o and d and o.get("country") == d.get("country") == "CN":
@@ -308,12 +325,18 @@ def flight_status(flight_no: str = "", origin: str = "", destination: str = "",
                        and (not arr_f
                             or (x.get("arr_iata") or "").upper() == arr_f)]
             if not matched:
+                unparseable = any(
+                    not ((x.get("dep_iata") or "").strip()
+                         or (x.get("arr_iata") or "").strip())
+                    and x.get("parse_ok") is False for x in flights)
                 out = canon.error(
                     canon.E_NO_MATCH,
-                    hint=f"航班号 {flight_no} 存在但航线不符（免费源按班号匹配、"
-                         f"忽略航线）——请核对班号或换日期重查")
+                    hint=("付费源返回未能归一化，暂无法核对航线（raw 已保留）——"
+                          "请稍后重试或反馈" if unparseable else
+                          f"航班号 {flight_no} 存在但航线不符（免费源按班号匹配、"
+                          f"忽略航线）——请核对班号或换日期重查"))
                 if not silent:
-                    cards.empty_card(out, title="航线不匹配",
+                    cards.empty_card(out, title=("结果归一化失败" if unparseable else "航线不匹配"),
                                      hint=out["error"].get("hint", ""))
                 return out
             out["data"]["flights"] = matched
@@ -340,7 +363,8 @@ def flight_status(flight_no: str = "", origin: str = "", destination: str = "",
                                        "args": {"flight_no": flight_no,
                                                 "date": date,
                                                 "paid_calibrate": True}}]
-                                     + cards.review_actions(flight_no))
+                                 + cards.review_actions(flight_no,
+                                                        dep_local_date=date))
     return out
 
 
@@ -359,8 +383,7 @@ def flight_status_batch(flight_nos: list[str], date: str = "",
     dep_f = (dep_iata or "").strip().upper()
     arr_f = (arr_iata or "").strip().upper()
     if not date:
-        import datetime as _dtmod
-        date = _dtmod.date.today().isoformat()
+        date = today_cn()   # 缺省=北京时间今天（免费源缺省会返回最近完成班次，服务端强制当日口径）
     nos = [n.strip().upper() for n in (flight_nos or []) if str(n).strip()]
     if not nos:
         return canon.error(canon.E_NO_MATCH, hint="flight_nos 为空")
@@ -370,6 +393,7 @@ def flight_status_batch(flight_nos: list[str], date: str = "",
         return canon.error(canon.E_DATA_UNAVAILABLE,
                            hint="flight.status 无已启用数据源")
     cards_out: list[dict] = []
+    _item_metas: list[dict] = []
     flights: list[dict] = []
     skipped: list[dict] = []
     for no in nos:
@@ -394,8 +418,13 @@ def flight_status_batch(flight_nos: list[str], date: str = "",
                    if (not dep_f or (x.get("dep_iata") or "").upper() == dep_f)
                    and (not arr_f or (x.get("arr_iata") or "").upper() == arr_f)]
         if not matched:
+            unparseable = any(
+                not ((x.get("dep_iata") or "").strip()
+                     or (x.get("arr_iata") or "").strip())
+                and x.get("parse_ok") is False for x in fl)
             skipped.append({"flight_no": no,
-                            "reason": "航线不符（免费源按班号匹配）"})
+                            "reason": "付费源返回未能归一化，无法按航线过滤"
+                            if unparseable else "航线不符（免费源按班号匹配）"})
             continue
         sub = {"data": {"flights": matched},
                "meta": out.get("meta") or {}}
@@ -406,8 +435,16 @@ def flight_status_batch(flight_nos: list[str], date: str = "",
     out = canon.ok({"flights": flights,
                     "matched": len(flights), "skipped": skipped})
     out.setdefault("meta", {})["cards"] = cards_out
+    cache_hits = sum(1 for s in _item_metas if s.get("cache") == "hit")
+    paid_cny = sum(float((s.get("cost") or {}).get("paid_cny") or 0)
+                   for s in _item_metas)
+    free_calls = sum(int((s.get("cost") or {}).get("free_calls") or 0)
+                     for s in _item_metas)
     out["meta"]["sources"] = [{"provider": "batch", "freshness": "live",
-                               "calls": len(nos)}]
+                               "calls": len(nos),
+                               "note": "calls=候选数；真实执行量见 meta.cost"}]
+    out["meta"]["cost"] = {"free_calls": free_calls, "paid_cny": paid_cny,
+                           "cache_hits": cache_hits}
     return out
 
 
@@ -463,7 +500,8 @@ def flight_price(origin: str, destination: str, date: str = "",
     if not chain:
         return canon.error(canon.E_DATA_UNAVAILABLE,
                            hint="flight.price 无已启用免费源（Travelpayouts 待 token）")
-    codes = {"成都": "CTU", "北京": "BJS", "上海": "SHA", "广州": "CAN", "深圳": "SZX",
+    codes = {"成都": "CTU", "成都天府": "TFU", "南昌": "KHN",
+             "北京": "BJS", "上海": "SHA", "广州": "CAN", "深圳": "SZX",
              "昆明": "KMG", "西安": "SIA", "杭州": "HGH", "重庆": "CKG", "厦门": "XMN",
              "南京": "NKG", "武汉": "WUH", "长沙": "CSX", "郑州": "CGO", "青岛": "TAO",
              "哈尔滨": "HRB", "乌鲁木齐": "URC", "海口": "HAK", "三亚": "SYX",
@@ -614,6 +652,12 @@ def route_ground(origin: str, destination: str, mode: str = "auto",
     if not o or not d:
         return canon.error(canon.E_NO_MATCH,
                            hint="城市码表未收录（五码注册表扩建后放开）")
+    # B5：地名降级如实告警（POI 未命中 → 按城市中心起算，距离/时长有偏差）
+    degrade = [f"出发地「{origin}」未解析到精确 POI，已按城市「{o['name']}」中心起算"
+               if o.get("fuzzy") else None,
+               f"目的地「{destination}」未解析到精确 POI，已按城市「{d['name']}」中心起算"
+               if d.get("fuzzy") else None]
+    degrade = [t for t in degrade if t]
     o_c, d_c = o.get("country"), d.get("country")
     if o_c != d_c:
         return canon.error(canon.E_NOT_APPLICABLE,
@@ -648,7 +692,7 @@ def route_ground(origin: str, destination: str, mode: str = "auto",
             except Exception:
                 pass
         cards.route_card(out, o_name=o["name"], d_name=d["name"],
-                         o=o, d=d, intl=False)
+                         o=o, d=d, intl=False, degrade=degrade)
         return out
     # —— 境外段：Google Maps（transit 默认 = 火车/地铁/巴士，机场↔市区高频）——
     gmode = mode if mode in ("transit", "driving", "walking", "bicycling") else "transit"
@@ -659,7 +703,7 @@ def route_ground(origin: str, destination: str, mode: str = "auto",
          "mode": gmode, "policy": {}},
         data_dir=data_dir())
     cards.route_card(out, o_name=o["name"], d_name=d["name"],
-                     o=o, d=d, intl=True)
+                     o=o, d=d, intl=True, degrade=degrade)
     return out
 
 

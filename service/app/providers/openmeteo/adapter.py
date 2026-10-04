@@ -13,6 +13,7 @@ import datetime as _dt
 import httpx
 
 from app.core.canon import E_NO_MATCH, E_UPSTREAM_FAILURE
+from app.core.tzcn import now_cn, today_cn  # B3：北京时间口径
 
 FORECAST = "https://api.open-meteo.com/v1/forecast"
 CLIMATE = "https://climate-api.open-meteo.com/v1/climate"
@@ -54,19 +55,19 @@ class Adapter:
         lat, lon = q.get("lat"), q.get("lon")
         if lat is None or lon is None:
             raise ProviderError(E_NO_MATCH, "缺少 lat/lon", self.id)
-        target = str(q.get("date") or _dt.date.today().isoformat())
+        target = str(q.get("date") or today_cn())
         try:
             tdate = _dt.date.fromisoformat(target)
         except ValueError:
             raise ProviderError(E_NO_MATCH, f"date 格式应为 YYYY-MM-DD：{target}", self.id)
-        horizon = _dt.date.today() + _dt.timedelta(days=16)
+        horizon = now_cn().date() + _dt.timedelta(days=16)
         if tdate <= horizon:
             return self._forecast(lat, lon, tdate)
         return self._climate(lat, lon, tdate)
 
     # ---------------- 预报层（≤16 天） ----------------
     def _forecast(self, lat, lon, tdate: _dt.date) -> dict:
-        start = max(tdate - _dt.timedelta(days=2), _dt.date.today())
+        start = max(tdate - _dt.timedelta(days=2), now_cn().date())
         end = min(tdate + _dt.timedelta(days=2), tdate)
         r = self.http.get(FORECAST, params={
             "latitude": lat, "longitude": lon,

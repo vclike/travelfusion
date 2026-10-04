@@ -34,6 +34,10 @@ def call_capability(capability: str, query: dict, *, data_dir: Path,
         hit = cache.cache_get(cache_db, ck)
         if hit is not None:
             hit.setdefault("meta", {})["cache"] = "hit"
+            cost0 = hit["meta"].get("cost")
+            hit["meta"]["cost"] = {"free_calls": 0, "paid_cny": 0}
+            if isinstance(cost0, dict):
+                hit["meta"]["cost"]["at_acquisition"] = cost0  # 原采集费用单列
             hit["meta"].setdefault("notes", []).append("缓存命中（未消耗上游额度）")
             return hit
 
@@ -61,8 +65,11 @@ def call_capability(capability: str, query: dict, *, data_dir: Path,
 
         # 付费闸门三连（docs/09 四规则）：永不自动 → 月预算 → 单次确认
         if tier == "paid" and not paid_requested:
-            last_err = canon.error(canon.E_DATA_UNAVAILABLE, pid,
-                                   hint="该能力只有付费源可提供——需显式 paid_calibrate=true（走预算闸门）")
+            # 2026-10-02 修复：免费源已给出真实错误（如 NOT_VERIFIABLE_FREE）时
+            # 不被付费闸门提示覆盖；链上无免费源错误时才以此兜底。
+            if last_err is None:
+                last_err = canon.error(canon.E_DATA_UNAVAILABLE, pid,
+                                       hint="该能力只有付费源可提供——需显式 paid_calibrate=true（走预算闸门）")
             continue
         est_cost = float(entry.get("costPerCall", 0) or 0)
         if tier == "paid":

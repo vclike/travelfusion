@@ -48,7 +48,9 @@ def cache_get(db_path: Path, key: str) -> dict | None:
 
 
 def cache_put(db_path: Path, key: str, payload: dict,
-              ttl: int, min_ttl: int = 300) -> None:
+              ttl: int, min_ttl: int = 0) -> None:
+    # 2026-10-02 修复：默认不再抬高 TTL（flight.observe 契约 60s 曾被抬到 300s）；
+    # 需要 ≥300 的调用方（flight.price expires_at 分支）已显式 max(300,…)。
     if ttl <= 0:
         return
     payload = json.dumps(payload, ensure_ascii=False)

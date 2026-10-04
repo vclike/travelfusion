@@ -3,7 +3,7 @@
 # iStoreOS 防火墙默认拒绝 WAN 入站 → 端口天然仅 LAN 可达（MCP 无鉴权，勿手动放行 WAN）
 services:
   travelfusion:
-    image: travelfusion:0.2.0
+    image: travelfusion:0.3.0
     container_name: travelfusion
     restart: unless-stopped
     ports:
