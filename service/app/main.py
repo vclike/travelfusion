@@ -186,3 +186,8 @@ def health() -> dict:
 
 
 app.mount("/mcp", _mcp.streamable_http_app())
+
+
+# 管理面板：独立路由模块（面板只写配置文件；测试用独立 FastAPI 实例，见 test_admin_api）
+from app.admin_api import router as admin_router  # noqa: E402
+app.include_router(admin_router)

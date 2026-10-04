@@ -40,6 +40,7 @@ class Settings:
     band_mid: int = 1000
     band_long: int = 3000
     # 车辆画像（电车默认）
+    plate: str = ""
     ev_rated_range_km: int = 600
     ev_consumption_factor: float = 0.75
     ev_soc_charge_to: float = 0.90
@@ -53,6 +54,7 @@ def load_settings() -> Settings:
     for k in (
         "monthly_paid_budget_cny", "confirm_threshold_cny",
         "band_short", "band_mid", "band_long",
+        "plate",
         "ev_rated_range_km", "ev_consumption_factor", "ev_soc_charge_to", "ev_soc_floor",
     ):
         if k in f:

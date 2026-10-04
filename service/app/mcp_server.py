@@ -17,6 +17,7 @@ from app.config import data_dir, load_settings
 from app.core import airline_kb as kb_store
 from app.core import attribution, canon, cards, chinatravel, dispatch, eligibility, ledger
 from app.core import negmark, registry
+from app.core import profile as _profile_mod
 from app.core.chinatravel import get_store as _china_get_store
 from app.core.tzcn import today_cn  # B3 修复：缺省日期一律按北京时间
 
@@ -647,7 +648,17 @@ def route_ground(origin: str, destination: str, mode: str = "auto",
                  ev_rated_range_km: int = 0, detail: bool = False,
                  with_attractions: bool = False) -> dict:
     """地面交通：境内走高德驾车（限行/EV/官方打车价）；境外走 Google
-    （transit 默认=火车地铁巴士，支持 driving/walking）。境外段门到门覆盖。"""
+    （transit 默认=火车地铁巴士，支持 driving/walking）。境外段门到门覆盖。
+    出行档案：origin/destination 可用管理面板配置的别名（家/公司/自定义）。"""
+    _hit = _profile_mod.resolve_alias(data_dir(), origin)
+    if _hit:
+        origin = _hit[0]
+    _hit = _profile_mod.resolve_alias(data_dir(), destination)
+    if _hit:
+        destination = _hit[0]
+    _s = load_settings()
+    plate = plate or _s.plate                       # 车辆画像默认（settings.yaml）
+    ev_rated_range_km = ev_rated_range_km or _s.ev_rated_range_km
     o, d = _resolve_city(origin), _resolve_city(destination)
     if not o or not d:
         return canon.error(canon.E_NO_MATCH,

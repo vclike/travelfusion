@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>travelfusion 管理面板（原型）</title>
+<style>
+:root{
+  --bg:#0d1117; --card:#161b22; --card2:#1c2330; --line:#2a3140;
+  --tx:#e6edf3; --tx2:#8b949e; --acc:#2e7cf6; --ok:#3fb950; --warn:#d29922; --bad:#f85149;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding-bottom:76px}
+.wrap{max-width:640px;margin:0 auto;padding:14px}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(var(--bg) 82%,transparent);padding:10px 0 8px;display:flex;align-items:center;gap:8px}
+header h1{font-size:16px;font-weight:600;flex:1;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.proto{font-size:10px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:1px 6px}
+.sect{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
+.sect>h2{font-size:13px;color:var(--tx2);padding:12px 14px 10px;display:flex;align-items:center;gap:6px;font-weight:600;letter-spacing:.5px}
+.sect>h2 .n{color:var(--acc);font-size:11px}
+.row{padding:10px 14px;border-top:1px solid var(--line)}
+.row .lbl{font-size:12px;color:var(--tx2);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+input[type=text],input[type=password],input[type=number]{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:8px;color:var(--tx);padding:9px 11px;font-size:14px;outline:none}
+input:focus{border-color:var(--acc)}
+.btn{border:1px solid var(--line);background:var(--card2);color:var(--tx);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.btn.mini{padding:5px 10px;font-size:12px;border-radius:7px}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--tx2)}
+.badge{font-size:11px;border-radius:6px;padding:2px 7px;border:1px solid var(--line);color:var(--tx2)}
+.badge.ok{color:var(--ok);border-color:var(--ok)}
+.badge.bad{color:var(--bad);border-color:var(--bad)}
+.badge.off{opacity:.45}
+/* 地址簿 */
+.addr{display:flex;gap:8px;margin-bottom:8px}
+.addr input.alias{flex:0 0 84px}
+.addr input.text{flex:1}
+.addr .del{flex:0 0 auto}
+.hint{font-size:11px;color:var(--tx2);margin-top:6px}
+/* 凭证行 */
+.keyrow{padding:12px 14px;border-top:1px solid var(--line)}
+.keyrow .top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.keyrow .top b{font-size:14px;flex:1}
+.keyrow .inputline{display:flex;gap:8px}
+.keyrow .inputline input{flex:1;font-family:ui-monospace,monospace;font-size:13px}
+.badge.state{min-width:44px;text-align:center}
+/* 开关 */
+.trow{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line)}
+.trow b{flex:1;font-weight:500}
+.trow .sub{font-size:11px;color:var(--tx2)}
+.sw{position:relative;width:42px;height:24px;border-radius:12px;background:var(--line);cursor:pointer;transition:.18s;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.18s}
+.sw.on{background:var(--ok)}
+.sw.on::after{left:21px}
+.negrow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px dashed var(--line);font-size:13px}
+.negrow .why{flex:1;color:var(--tx2);font-size:12px}
+/* 保存条 */
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(transparent,var(--bg) 30%);padding:14px 14px calc(14px + env(safe-area-inset-bottom))}
+.savebar .inner{max-width:640px;margin:0 auto;display:flex;gap:10px}
+.savebar .btn{flex:1;padding:12px}
+.dirty #saveProfile,.pulse{animation:pulse 1.6s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(46,124,246,.25)}}
+/* toast & modal */
+#toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99;display:flex;flex-direction:column;gap:8px;align-items:center}
+.tst{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 16px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.5);animation:fadein .2s}
+.tst.ok{border-color:var(--ok)}.tst.bad{border-color:var(--bad)}
+@keyframes fadein{from{opacity:0;transform:translateY(-8px)}}
+#mask{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:90;display:none;align-items:center;justify-content:center;padding:20px}
+#mask.show{display:flex}
+#mask .box{background:var(--card);border:1px solid var(--line);border-radius:14px;max-width:340px;width:100%;padding:20px}
+#mask .box h3{font-size:15px;margin-bottom:8px}
+#mask .box p{font-size:13px;color:var(--tx2);margin-bottom:16px}
+#mask .box .ops{display:flex;gap:10px;justify-content:flex-end}
+footer{color:var(--tx2);font-size:11px;text-align:center;padding:6px 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="dot" id="healthDot"></span>travelfusion 管理面板 <span class="proto">原型 · 演示数据</span></h1>
+    <button class="btn ghost mini" onclick="logout()">退出</button>
+  </header>
+
+  <!-- ① 出行档案 -->
+  <section class="sect" id="sectProfile">
+    <h2><span class="n">①</span>出行档案 <span style="flex:1"></span><span class="hint" id="profSaved">已保存</span></h2>
+    <div class="row">
+      <div class="lbl">常用地址 <span>说"从家到公司"时的解析目标</span></div>
+      <div id="addrList"></div>
+      <button class="btn mini" id="addAddr" onclick="addAddr()">＋ 添加地址</button>
+      <div class="hint">别名即口令：导航/路线查询里可直接说"从家出发"。最多 8 条。</div>
+    </div>
+    <div class="row">
+      <div class="lbl">车牌（限行查询按尾号）</div>
+      <input type="text" id="plate" placeholder="如 川A·12345F，留空 = 不做限行判断">
+    </div>
+    <div class="row">
+      <div class="lbl">纯电续航（EV 中途充电规划默认值）</div>
+      <input type="number" id="evRange" min="0" max="2000" step="10" placeholder="如 510，留空 = 不做 EV 规划">
+      <div class="hint">单位 km，按 CLTC 打八折参与计算。</div>
+    </div>
+  </section>
+
+  <!-- ② API 凭证 -->
+  <section class="sect">
+    <h2><span class="n">②</span>API 凭证 <span style="flex:1"></span><span class="hint">逐行保存 · 掩码回显</span></h2>
+    <div id="keyList"></div>
+  </section>
+
+  <!-- ③ 应急开关 -->
+  <section class="sect">
+    <h2><span class="n">③</span>应急开关 <span style="flex:1"></span><span class="hint">切换即时生效</span></h2>
+    <div id="swList"></div>
+    <div class="row">
+      <div class="lbl">负标（故障源自动拉黑）<span id="negCount"></span></div>
+      <div id="negList"></div>
+      <div class="hint" id="negEmpty" style="display:none">当前没有拉黑项。</div>
+    </div>
+  </section>
+
+  <footer><span id="ver">v0.3.0 · healthy</span> · 面板仅写配置文件 · 建议仅局域网访问</footer>
+</div>
+
+<div class="savebar dirty-ctl" id="saveBar">
+  <div class="inner"><button class="btn pri" id="saveProfile" onclick="saveProfile()">保存出行档案</button></div>
+</div>
+
+<div id="toast"></div>
+<div id="mask"><div class="box"><h3 id="mTitle"></h3><p id="mText"></p><div class="ops">
+  <button class="btn" onclick="modalClose(false)">取消</button>
+  <button class="btn danger" id="mOk" onclick="modalClose(true)">确认</button>
+</div></div></div>
+
+<script>
+/* ============ 演示数据层（融合阶段替换为真实 fetch） ============ */
+const API = {
+  config:  { url: "/admin/api/config",  mock: true },
+};
+const MOCK = {
+  profile: {
+    addresses: [
+      { alias: "家",   text: "军安卫士花园" },
+      { alias: "公司", text: "天府软件园C区" },
+    ],
+    plate: "川A·12345F",
+    ev_range_km: 510,
+  },
+  keys: {
+    amap: "a3916b8e64e7c056c27a8405a71e915d",
+    airlabs: "84f2ee14-c26e-46c9-a0dd-ec4907318d56",
+    variflight: "", travelpayouts: "ce696b0a825939ddb82c82f1b0bfbe1a",
+    googlemaps: "", opensky: "", aviationstack: "", openmeteo: "",
+  },
+  providers: {
+    amap: { enabled: true }, airlabs: { enabled: true }, variflight: { enabled: true },
+    travelpayouts: { enabled: true }, googlemaps: { enabled: false },
+    opensky: { enabled: true }, aviationstack: { enabled: false }, openmeteo: { enabled: true },
+  },
+  negmarks: [
+    { id: "n1", provider: "googlemaps", capability: "ground.route.intl", reason: "连续 NO_MATCH×3（09-29 14:20）", eta: "1 小时后自动解除" },
+  ],
+};
+const KEY_LABELS = { amap:"高德", airlabs:"AirLabs", variflight:"Variflight（付费）",
+  travelpayouts:"Travelpayouts", googlemaps:"Google Maps", opensky:"OpenSky",
+  aviationstack:"Aviationstack", openmeteo:"OpenMeteo" };
+const label = p => KEY_LABELS[p] || p;   // 数据驱动：面板只渲染 manifests 里实际存在的源
+
+/* mock fetch —— 融合时整体替换为真实请求，路径已按契约定死 */
+const LIVE = location.protocol.startsWith("http");
+const AKEY = () => sessionStorage.getItem("tf_admin_key") || "";
+async function api(path, opts = {}) {
+  if (!LIVE) {                                    // 文件直开 = 演示模式
+    await new Promise(r => setTimeout(r, 260));
+    if (path === "/admin/api/keys/test")
+      return { ok: Math.random() > .25, latency_ms: 120 + (Math.random()*300|0),
+               error: Math.random() > .75 ? "AUTH_REQUIRED 鉴权失败" : null };
+    return { ok: true };
+  }
+  const r = await fetch(path, { method: opts.method || "GET",
+    headers: { "Content-Type": "application/json", "X-Admin-Key": AKEY() },
+    body: opts.body ? JSON.stringify(opts.body) : undefined });
+  if (r.status === 401) { showLogin(); throw new Error("需要管理密码"); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.detail || j.error || ("HTTP " + r.status));
+  return j;
+}
+
+/* ============ 状态 ============ */
+let S = { profile: null, keys: {}, providers: {}, negmarks: [], dirty: false };
+let testState = {};   // provider -> {ok|bad|null, note}
+
+const $ = id => document.getElementById(id);
+function toast(msg, cls="ok") {
+  const d = document.createElement("div");
+  d.className = "tst " + cls; d.textContent = msg;
+  $("toast").appendChild(d);
+  setTimeout(() => d.remove(), 2400);
+}
+let modalCb = null;
+function modal(title, text, cb) {
+  $("mTitle").textContent = title; $("mText").textContent = text;
+  modalCb = cb; $("mask").classList.add("show");
+}
+function modalClose(yes) { $("mask").classList.remove("show"); if (yes && modalCb) modalCb(); modalCb = null; }
+function maskKey(k) { return k ? k.slice(0, 4) + "••••••••" + k.slice(-4) : ""; }
+function markDirty() {
+  S.dirty = true;
+  $("saveProfile").textContent = "保存出行档案 ●";
+  $("saveProfile").classList.add("pulse");
+  $("profSaved").textContent = "未保存";
+}
+
+/* ============ 渲染 ============ */
+function renderProfile() {
+  const P = S.profile;
+  const list = $("addrList"); list.innerHTML = "";
+  P.addresses.forEach((a, i) => {
+    const d = document.createElement("div"); d.className = "addr";
+    d.innerHTML = `<input class="alias" placeholder="别名" value="${a.alias}">
+      <input class="text" placeholder="地址 / 小区名" value="${a.text}">
+      <button class="btn mini del">删除</button>`;
+    const [al, tx] = d.querySelectorAll("input");
+    al.oninput = e => { P.addresses[i].alias = e.target.value; markDirty(); };
+    tx.oninput = e => { P.addresses[i].text = e.target.value; markDirty(); };
+    d.querySelector(".del").onclick = () => {
+      if (P.addresses[i].alias === "家") return toast("固定槽位「家」不可删除", "bad");
+      P.addresses.splice(i, 1); markDirty(); renderProfile();
+    };
+    list.appendChild(d);
+  });
+  $("plate").value = P.plate || "";
+  $("evRange").value = P.ev_range_km ?? "";
+}
+function renderKeys() {
+  const list = $("keyList"); list.innerHTML = "";
+  Object.keys(S.providers).forEach(p => {
+    const has = !!S.keys[p];
+    const st = testState[p];
+    const badge = st ? (st.ok ? `<span class="badge ok state">✓ 可用</span>`
+                              : `<span class="badge bad state" title="${st.note||""}">✗ 失败</span>`)
+                    : `<span class="badge state">${has ? "已配置" : "未配置"}</span>`;
+    const d = document.createElement("div"); d.className = "keyrow";
+    d.innerHTML = `<div class="top"><b>${label(p)}</b>${badge}
+        ${p === "variflight" ? '<span class="badge">付费</span>' : ""}</div>
+      <div class="inputline">
+        <input type="password" placeholder="${has ? maskKey(S.keys[p]) : "未配置——粘贴 API Key"}" data-p="${p}">
+        <button class="btn mini" data-act="test">测试</button>
+        <button class="btn mini pri" data-act="save">保存</button>
+      </div>
+      ${st && !st.ok && st.note ? `<div class="hint" style="color:var(--bad)">${st.note}</div>` : ""}
+      ${st && st.ok ? `<div class="hint" style="color:var(--ok)">连通 ${st.latency_ms}ms</div>` : ""}`;
+    const inp = d.querySelector("input");
+    d.querySelector('[data-act=test]').onclick = async () => {
+      const candidate = inp.value.trim();
+      if (!candidate && !S.keys[p]) return toast("该源尚未配置 Key——先粘贴再测试", "bad");
+      testState[p] = null; renderKeys();
+      const r = await api(`/admin/api/keys/test`, { method: "POST",
+        body: { provider: p, candidate } }).catch(e => ({ ok: false, error: e.message }));
+      testState[p] = r.ok === true ? { ok: true, latency_ms: r.latency_ms }
+                                   : { ok: false, note: r.error || r.note || "测试失败" };
+      renderKeys();
+    };
+    d.querySelector('[data-act=save]').onclick = async () => {
+      const v = inp.value.trim();
+      if (!v) return toast("Key 为空——如需清除请联系服务端", "bad");
+      await api(`/admin/api/keys/${p}`, { method: "PUT", body: { key: v } });
+      S.keys[p] = v; testState[p] = null;
+      toast(`${label(p)} Key 已保存`);
+      renderKeys();
+    };
+    list.appendChild(d);
+  });
+}
+function renderSwitches() {
+  const list = $("swList"); list.innerHTML = "";
+  Object.keys(S.providers).forEach(p => {
+    const on = S.providers[p]?.enabled;
+    const paid = p === "variflight";
+    const d = document.createElement("div"); d.className = "trow";
+    d.innerHTML = `<b>${label(p)} ${paid ? '<span class="badge">付费</span>' : ""}
+        <div class="sub">${on ? "查询时参与调度" : "已停用——查询直接跳过"}</div></b>
+      <div class="sw ${on ? "on" : ""}"></div>`;
+    d.querySelector(".sw").onclick = async () => {
+      const nv = !on;
+      if (paid && !nv) return toast("付费源不在此停用——它有确认门保护", "bad");
+      await api(`/admin/api/providers/${p}/enabled`, { method: "PUT" });
+      S.providers[p].enabled = nv;
+      toast(`${label(p)} 已${nv ? "启用" : "停用"}`);
+      renderSwitches();
+    };
+    list.appendChild(d);
+  });
+}
+function renderNeg() {
+  const list = $("negList"); list.innerHTML = "";
+  $("negCount").textContent = S.negmarks.length ? `${S.negmarks.length} 项` : "";
+  $("negEmpty").style.display = S.negmarks.length ? "none" : "block";
+  S.negmarks.forEach(n => {
+    const d = document.createElement("div"); d.className = "negrow";
+    d.innerHTML = `<b>${n.provider}</b><span class="why">${n.capability} · 连败${n.fail_count}次 · ${n.eta_min} 分钟后自动解除</span>
+      <button class="btn mini">解除</button>`;
+    d.querySelector("button").onclick = async () => {
+      modal("解除负标？", `${n.provider} 的 ${n.capability} 将立即恢复参与调度。`, async () => {
+        await api(`/admin/api/negmarks?provider=${encodeURIComponent(n.provider)}&capability=${encodeURIComponent(n.capability)}`,
+          { method: "DELETE" });
+        S.negmarks = S.negmarks.filter(x =>
+          !(x.provider === n.provider && x.capability === n.capability));
+        toast("已解除"); renderNeg();
+      });
+    };
+    list.appendChild(d);
+  });
+  if (S.negmarks.length > 1) {
+    const d = document.createElement("div"); d.className = "negrow";
+    d.innerHTML = `<span></span><button class="btn mini danger">清空全部</button>`;
+    d.querySelector("button").onclick = () => modal("清空全部负标？",
+      "所有被自动拉黑的源将立即恢复参与调度。", async () => {
+        await api(`/admin/api/negmarks`, { method: "DELETE" });
+        S.negmarks = []; toast("已清空"); renderNeg();
+      });
+    list.appendChild(d);
+  }
+}
+
+/* ============ 档案保存 ============ */
+function collectProfile() {
+  const inputs = document.querySelectorAll("#addrList .addr");
+  const addrs = [];
+  inputs.forEach(d => {
+    const alias = d.querySelector(".alias").value.trim();
+    const text = d.querySelector(".text").value.trim();
+    if (alias && text) addrs.push({ alias, text });
+  });
+  return {
+    addresses: addrs.slice(0, 8),
+    plate: $("plate").value.trim(),
+    ev_range_km: $("evRange").value ? +$("evRange").value : null,
+  };
+}
+async function saveProfile() {
+  const p = collectProfile();
+  if (p.addresses.some(a => !a.text)) return toast("有地址缺内容——填写或删除该行", "bad");
+  await api("/admin/api/profile", { method: "PUT", body: p });   // 服务端拆分：地址→profile.yaml，车牌/EV→settings.yaml
+  S.profile = p; S.dirty = false;
+  $("saveProfile").textContent = "保存出行档案";
+  $("saveProfile").classList.remove("pulse");
+  $("profSaved").textContent = "已保存 " + new Date().toLocaleTimeString("zh-CN", { hour12: false });
+  toast("出行档案已保存");
+}
+
+/* ============ 登录门 ============ */
+function showLogin() {
+  if (document.getElementById("loginGate")) return;
+  document.body.insertAdjacentHTML("beforeend",
+    `<div id="loginGate" style="position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center">
+      <div style="max-width:320px;width:90%;text-align:center">
+        <h2 style="margin-bottom:14px">travelfusion 管理面板</h2>
+        <input type="password" id="loginKey" placeholder="管理密码（TF_ADMIN_KEY）"
+          style="margin-bottom:10px" autocomplete="current-password">
+        <button class="btn pri" style="width:100%" id="loginGo">进入</button>
+        <p class="hint" style="margin-top:10px">密码 = 服务端 keys.yaml 的 admin_key（未设置则免密）</p>
+      </div></div>`);
+  const go = async () => {
+    sessionStorage.setItem("tf_admin_key", $("loginKey").value);
+    try {
+      bootWith(await api("/admin/api/config"));
+      $("loginGate").remove();
+      toast("已进入管理面板");
+    } catch (e) { toast("密码不对或服务不可达：" + e.message, "bad"); }
+  };
+  $("loginGo").onclick = go;
+  $("loginKey").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+  $("loginKey").focus();
+}
+function logout() {
+  sessionStorage.removeItem("tf_admin_key");
+  location.reload();
+}
+
+/* ============ 启动 ============ */
+function bootWith(cfg) {
+  S.profile = cfg.profile || { addresses: [] };
+  S.keys = cfg.keys || {};
+  S.providers = cfg.providers || {};
+  S.negmarks = cfg.negmarks || [];
+  renderProfile(); renderKeys(); renderSwitches(); renderNeg();
+}
+if (LIVE) {
+  api("/admin/api/config").then(bootWith).catch(() => showLogin());
+} else {
+  bootWith({
+    profile: structuredClone(MOCK.profile),
+    keys: structuredClone(MOCK.keys),
+    providers: structuredClone(MOCK.providers),
+    negmarks: structuredClone(MOCK.negmarks),
+  });
+}
+["plate", "evRange"].forEach(id =>
+  $(id).addEventListener("input", markDirty));
+
+
+</script>
+</body>
+</html>

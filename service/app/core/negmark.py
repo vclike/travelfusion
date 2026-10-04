@@ -83,3 +83,30 @@ def banned_providers(db_path: Path, capability: str, now: float | None = None) -
         rows = c.execute("SELECT provider, banned_until FROM negmark WHERE capability=?",
                          (capability,)).fetchall()
         return {r["provider"] for r in rows if r["banned_until"] > now}
+
+
+def list_banned(db_path: Path, now: float | None = None) -> list[dict]:
+    """管理面板：当前生效中的拉黑项（含剩余分钟）。"""
+    now = now if now is not None else time.time()
+    with _LOCK, _conn(db_path) as c:
+        rows = c.execute("SELECT provider, capability, fail_count, banned_until, "
+                         "last_reason FROM negmark WHERE banned_until>? "
+                         "ORDER BY banned_until", (now,)).fetchall()
+    return [{"provider": r["provider"], "capability": r["capability"],
+             "fail_count": r["fail_count"], "last_reason": r["last_reason"] or "",
+             "eta_min": max(0, round((r["banned_until"] - now) / 60))}
+            for r in rows]
+
+
+def clear(db_path: Path, provider: str | None = None,
+          capability: str | None = None) -> int:
+    """管理面板手动解除；provider/capability 缺省 = 全清。返回清除行数。"""
+    with _LOCK, _conn(db_path) as c:
+        if provider and capability:
+            cur = c.execute("DELETE FROM negmark WHERE provider=? AND capability=?",
+                            (provider, capability))
+        elif provider:
+            cur = c.execute("DELETE FROM negmark WHERE provider=?", (provider,))
+        else:
+            cur = c.execute("DELETE FROM negmark")
+        return cur.rowcount
