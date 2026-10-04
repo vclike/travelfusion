@@ -24,9 +24,20 @@ def test_itinerary_deadlines():
     assert card["payload"]["span_min"] == 570                      # 7:00→16:30
 
 
-def test_itinerary_map_points():
+def test_itinerary_map_suppressed_for_flights():
+    """含 ✈️ 航段的跨城行程：点分属两城，同图投影无意义 → 不配地图。"""
     out = {"data": {"legs": LEGS}, "meta": {"sources": []}}
     cards.itinerary_card(out, legs=LEGS, norms=NORMS)
+    assert out["meta"]["card"]["payload"]["map"] is None
+
+
+def test_itinerary_map_present_ground_only():
+    """纯地面行程保留地图（点位同城/邻近）。"""
+    legs = [{"mode": "drive", "from": "成都", "to": "重庆",
+             "depart": "2026-10-02T07:00:00+08:00",
+             "arrive": "2026-10-02T11:00:00+08:00"}]
+    out = {"data": {"legs": legs}, "meta": {"sources": []}}
+    cards.itinerary_card(out, legs=legs, norms=NORMS)
     pts = out["meta"]["card"]["payload"]["map"]["points"]
     names = [x["name"] for x in pts]
-    assert "成都" in names and "上海" in names
+    assert "成都" in names and "重庆" in names

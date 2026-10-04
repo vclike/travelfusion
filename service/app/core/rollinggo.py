@@ -222,6 +222,28 @@ def build_search_payload(origin_query: str, place: str, place_type: str = "城�
     return params
 
 
+def _pc_booking_url(hotel_id, hotel_name: str, check_in: str,
+                    nights: int, adults: int, code: str) -> str | None:
+    """PC 单酒店预订页深链——跳过会丢 utm_source 的移动详情页 302。"""
+    if not hotel_id or not check_in:
+        return None
+    from datetime import date as _d, timedelta
+    from urllib.parse import quote
+    try:
+        y, m, dd = (int(x) for x in check_in.split("-"))
+        check_out = (_d(y, m, dd) + timedelta(days=int(nights or 1))).isoformat()
+    except Exception:
+        return None
+    q = "&".join(
+        f"{k}={quote(str(v))}" for k, v in {
+            "hotelId": hotel_id, "hotelType": "hotel",
+            "checkIndate": check_in, "checkOutDate": check_out,
+            "room": 1, "adults": adults, "children": 0,
+            "hotelName": hotel_name or "", "utm_source": code,
+        }.items())
+    return f"https://rollinggo.cn/pc/#/hotel/single?{q}"
+
+
 def search_hotels(data_dir: Path, origin_query: str, place: str,
                   place_type: str = "城市", check_in_date: str = "",
                   stay_nights: int = 1, adult_count: int = 2, size: int = 5,
@@ -249,13 +271,19 @@ def search_hotels(data_dir: Path, origin_query: str, place: str,
     out = []
     for h in hotels:
         price = h.get("price") or {}
+        mobile_url = apply_promo(h.get("bookingUrl") or "", code)
+        # 主链接用 PC 预订页深链（utm_source 全程保留）；移动详情页作备用字段
+        pc = (_pc_booking_url(h.get("hotelId"), h.get("name"), check_in_date,
+                              stay_nights, adult_count, code)
+              or mobile_url)
         out.append({
             "name": h.get("name"),
             "star": h.get("starRating"),
             "address": h.get("address"),
             "price_lowest": price.get("lowestPrice"),
             "price_note": price.get("message") or "",
-            "booking_url": apply_promo(h.get("bookingUrl") or "", code),
+            "booking_url": pc,
+            "mobile_url": mobile_url,
             "tags": (h.get("tags") or [])[:6],
         })
     return out

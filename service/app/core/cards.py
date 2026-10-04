@@ -600,8 +600,27 @@ def itinerary_card(out: dict, *, legs: list[dict], norms: dict) -> None:
             lines.append({"from": name_seq[a], "to": name_seq[b],
                           "mode": (l.get("mode") or "drive"),
                           "label": f"{a}→{b}"})
+    # 跨城行程（✈️ 两端）：points 分属两城，同图投影无意义且互相压字 → 不配地图
+    import math as _math
+
+    def _dist_km(a, b):
+        la1, lo1 = _math.radians(a.get("lat", 0)), _math.radians(a.get("lon", 0))
+        la2, lo2 = _math.radians(b.get("lat", 0)), _math.radians(b.get("lon", 0))
+        h = (_math.sin((la2 - la1) / 2) ** 2
+             + _math.cos(la1) * _math.cos(la2) * _math.sin((lo2 - lo1) / 2) ** 2)
+        return 6371 * 2 * _math.asin(_math.sqrt(h))
+
+    # 跨城行程（含 ✈️ 航段）：points 分属两城，同图投影无意义且互相压字 → 不配地图；
+    # 纯地面行程（自驾环线等）保留地图
+    has_flight = any((l.get("mode") or "").lower() == "flight" for l in legs)
+    max_span_km = 0.0
+    for i in range(len(points)):
+        for j in range(i + 1, len(points)):
+            max_span_km = max(max_span_km, _dist_km(points[i], points[j]))
+    map_payload = (None if (has_flight or max_span_km > 300)
+                   else {"points": points, "lines": lines})
     payload = {"legs": view, "span_min": span_min, "notices": notes,
-               "map": {"points": points, "lines": lines}}
+               "map": map_payload}
     card = _envelope("itinerary", "全程行程", payload, notices=notes)
     card["id"] = stage_card(card)
     out.setdefault("meta", {})["card"] = card

@@ -41,6 +41,7 @@ def test_search_hotels_rewrites_links_and_needs_token(tmp_path, monkeypatch):
     monkeypatch.setenv("RGH_TOKEN_PATH", str(tmp_path / "token.json"))
 
     body = {"hotelInformationList": [{
+        "hotelId": 9,
         "name": "测试酒店", "starRating": 4, "address": "某路1号",
         "price": {"lowestPrice": 300, "message": "3晚总价：900CNY"},
         "bookingUrl": "https://rollinggo.cn/pages/hotel/detail/index?id=9&utm_source=rollinggo_cus",
@@ -63,8 +64,11 @@ def test_search_hotels_rewrites_links_and_needs_token(tmp_path, monkeypatch):
     assert captured["auth"] == "Bearer tok-xyz"
     assert captured["payload"]["checkInParam"]["checkInDate"] == "2026-10-18"
     h = hotels[0]
+    assert "/pc/#/hotel/single" in h["booking_url"]            # PC 深链（不丢归因）
     assert "utm_source=0A0OIB" in h["booking_url"]
+    assert "checkOutDate=2026-10-21" in h["booking_url"]        # 入住+晚数推离店
     assert "rollinggo_cus" not in h["booking_url"]
+    assert h["mobile_url"].startswith("https://rollinggo.cn/pages/")  # 备用移动页
 
 
 def test_search_hotels_without_token_raises(tmp_path, monkeypatch):
