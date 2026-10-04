@@ -13,11 +13,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import time
+from urllib.parse import quote
 
 import yaml
 
 from app.config import data_dir
+from app.core.coords import wgs2gcj
+from app.core.keys import provider_key
 
 CARD_STAGING: dict[str, tuple[float, dict]] = {}
 _TTL = 2 * 3600
@@ -329,6 +333,67 @@ def status_card(out: dict, *, date_given: bool = False) -> None:
     m["card"] = card
 
 
+def _downsample(shape: list, max_pts: int = 60) -> list:
+    """等距抽稀 shape 到 ≤max_pts 点（静态地图 URL 长度安全线）。"""
+    if len(shape) <= max_pts:
+        return shape
+    step = (len(shape) - 1) / (max_pts - 1)
+    return [shape[round(i * step)] for i in range(max_pts)]
+
+
+def _amap_static_url(shape: list, key: str) -> str | None:
+    """高德静态地图 URL：真实底图 + 路径折线 + 起终点标注。
+
+    shape 为 WGS-84 [lat,lng] 序列——逐点转 GCJ-02 对齐高德底图；
+    境外点 wgs2gcj 原样透传（境内路线不涉及）。任何异常返回 None，
+    客户端回退 SVG 折线。
+    """
+    try:
+        pts = _downsample([s for s in shape
+                           if isinstance(s, (list, tuple)) and len(s) == 2], 60)
+        if len(pts) < 2:
+            return None
+        gcj = [wgs2gcj(float(a), float(b)) for a, b in pts]
+        path = ";".join(f"{lng:.6f},{lat:.6f}" for lat, lng in gcj)
+        lats = [p[0] for p in gcj]
+        lngs = [p[1] for p in gcj]
+        clat = (min(lats) + max(lats)) / 2
+        clng = (min(lngs) + max(lngs)) / 2
+        span = max(max(lngs) - min(lngs), (max(lats) - min(lats)) * 3.0) or 1e-4
+        zoom = max(4, min(17, round(math.log2(360.0 * 400 / (256.0 * span)))))
+        o, dpt = gcj[0], gcj[-1]
+        return ("https://restapi.amap.com/v3/staticmap"
+                f"?location={clng:.6f},{clat:.6f}&zoom={zoom}"
+                f"&size=400*130&scale=2"
+                f"&markers=mid,0x2E7CF6,A:{o[1]:.6f},{o[0]:.6f}"
+                f"|mid,0x00B578,B:{dpt[1]:.6f},{dpt[0]:.6f}"
+                f"&paths=6,0x2E7CF6,1,,:{path}&key={key}")
+    except Exception:
+        return None
+
+
+def _nav_actions(o: dict, d: dict, o_name: str, d_name: str,
+                 intl: bool, mode: str) -> list:
+    """导航深链动作：境内高德导航（wgs84 口径由 uri.amap.com 自转），
+    境外 Google Maps 导航。坐标缺失返回空。"""
+    if o.get("lat") is None or d.get("lat") is None:
+        return []
+    if intl:
+        gm = {"driving": "driving", "transit": "transit", "walking": "walking",
+              "bicycling": "bicycling"}.get(mode, "transit")
+        url = ("https://www.google.com/maps/dir/?api=1"
+               f"&origin={o['lat']},{o['lon']}&destination={d['lat']},{d['lon']}"
+               f"&travelmode={gm}")
+        label = "🗺️ Google 地图"
+    else:
+        url = ("https://uri.amap.com/navigation?"
+               f"from={o['lon']},{o['lat']},{quote(o_name)}"
+               f"&to={d['lon']},{d['lat']},{quote(d_name)}"
+               f"&mode=car&coordinate=wgs84&src=travelfusion&callnative=0")
+        label = "🗺️ 高德导航"
+    return [{"id": "nav_map", "label": label, "url": url}]
+
+
 def route_card(out: dict, *, o_name: str, d_name: str, o: dict, d: dict,
                intl: bool, degrade: list | None = None) -> None:
     """route_ground → route.cn / route.intl（坐标齐全时附 route.map）。
@@ -368,6 +433,13 @@ def route_card(out: dict, *, o_name: str, d_name: str, o: dict, d: dict,
             "lines": [{"from": 1, "to": 2, "mode": mode,
                        "label": f"{data.get('distance_km')}km·{data.get('duration_min')}min"}],
         }
+    # 静态地图（境内 + 有真实折线）：高德底图上叠路线，客户端 img 失败回退 SVG
+    if not intl and payload.get("shape"):
+        _key = provider_key(data_dir(), "amap")
+        if _key:
+            payload["static_url"] = _amap_static_url(payload["shape"], _key)
+    # 导航深链动作（route 卡渲染进 foot）
+    actions = _nav_actions(o, d, o_name, d_name, intl, mode)
     # 过路费自相矛盾：收费里程长但费用为 0 → 打标（v5 cost.tolls 偶发漏报）
     # degrade（B5）：地名解析降级说明排在最前
     route_notes: list[dict] = [
@@ -379,6 +451,7 @@ def route_card(out: dict, *, o_name: str, d_name: str, o: dict, d: dict,
                     f" 但费用为 0）——实际以高德 App 实时为准"})
     m = out.setdefault("meta", {})
     card = _envelope(card_type, title, payload, notices=route_notes,
+                     actions=actions,
                      meta={"sources": m.get("sources"), "cost": m.get("cost"),
                            "cache": m.get("cache")})
     card["id"] = stage_card(card)
