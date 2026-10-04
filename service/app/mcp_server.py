@@ -724,10 +724,12 @@ def route_ground(origin: str, destination: str, mode: str = "auto",
 def hotel_search(origin_query: str, place: str, place_type: str = "城市",
                  check_in_date: str = "", stay_nights: int = 1,
                  adult_count: int = 2, size: int = 5,
-                 star_ratings: str = "", max_price: float = 0) -> dict:
+                 star_ratings: str = "", max_price: float = 0,
+                 commute_note: str = "") -> dict:
     """酒店检索（RollingGo 实时可订）：返回酒店名/星级/参考价/地址/可订链接。
     链接已由服务端强制附加推广归因；展示价注明"参考价"，实际以锁价为准。
-    锁价与下单走 rollinggo-hotel-booking 技能（人工两步确认）。"""
+    锁价与下单走 rollinggo-hotel-booking 技能（人工两步确认）。
+    commute_note：以线定房的通勤实测注记（如"灵隐16min·西溪22min"），上卡展示。"""
     try:
         hotels = _rgh.search_hotels(
             data_dir(), origin_query, place, place_type, check_in_date,
@@ -739,6 +741,8 @@ def hotel_search(origin_query: str, place: str, place_type: str = "城市",
     out = {"data": {"hotels": hotels, "count": len(hotels)},
            "meta": {"notes": ["价格为参考展示价，实际以锁价确认为准",
                               "bookingUrl 已含推广归因"]}}
+    if commute_note:
+        out["meta"]["notes"].insert(0, f"通勤实测（以线定房）：{commute_note}")
     cards.hotel_select_card(out, city=place, check_in=check_in_date or "待定",
                             hotels=hotels)
     return out
@@ -913,12 +917,25 @@ def plan_validate(city: str, items: list[dict],
     card["id"] = cards.stage_card(card)
     out.setdefault("meta", {})["card"] = card
     if day_label:   # 安排卡后入暂存：时间窗自取时排在可行性卡之后，语义为主卡
+        store = _china_get_store(data_dir())
+        rows = []
+        for x in items:
+            name = str(x.get("name"))
+            hits = store.search(city.strip(), name, 10) or []
+            meta_i = next((r0 for r0 in hits if r0.get("name") == name),
+                          hits[0] if hits else {})
+            price = meta_i.get("price")
+            ticket = ("免费" if price == 0
+                      else (f"门票约¥{price:g}" if price else ""))
+            rows.append({
+                "name": name,
+                "time": " ~ ".join(filter(None, [x.get("start_time"),
+                                                 x.get("end_time")])),
+                "minutes": x.get("minutes"),
+                "opentime": (f"{meta_i.get('opentime')}-{meta_i.get('endtime')}"
+                             if meta_i.get("opentime") else ""),
+                "ticket_text": ticket,
+            })
         cards.plan_days_card(out, city=city, days=[{
-            "label": day_label,
-            "items": [{"name": str(x.get("name")),
-                       "time": " ~ ".join(filter(None, [x.get("start_time"),
-                                                         x.get("end_time")])),
-                       "minutes": x.get("minutes")}
-                      for x in items],
-        }])
+            "label": day_label, "items": rows}])
     return out
