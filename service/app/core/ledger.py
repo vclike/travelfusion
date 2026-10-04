@@ -79,27 +79,27 @@ class QuotaLedger:
             return used
 
     def consume_paid(self, provider: str, cny: float, calls: int = 1) -> float:
-        """记付费消耗；返回累计 paid_cny。"""
+        """记付费消耗；付费挂 total 桶累计（跨月不清零），返回累计 paid_cny。
+
+        2026-10-04 补完 total 制语义：此前（10-02 NAS 侧半成品）月度桶写入与
+        #legacy-total 迁移混杂、return 后残留不可达代码。注意：混用免费+付费的
+        provider 暂不支持（schema 单行/主键=provider，付费会落在原周期行上），
+        当前清单内付费源均为纯 paygo（variflight），无此场景。
+        """
         with _LOCK, self._conn() as c:
-            c.execute("UPDATE ledger SET provider=provider||'#legacy-total' "
-                      "WHERE period='total' AND paid_cny>0 "
-                      "AND provider NOT LIKE '%#legacy%'")
-            self._row(c, provider, "month")
+            row = self._row(c, provider, "total")
             c.execute("UPDATE ledger SET paid_cny=paid_cny+?, attempts=attempts+1, "
                       "billed=billed+? WHERE provider=?", (cny, calls, provider))
-            row = self._row(c, provider, "month")
-            return float(row["paid_cny"])
-            c.execute("UPDATE ledger SET paid_cny=paid_cny+?, attempts=attempts+1, "
-                      "billed=billed+? WHERE provider=?", (cny, calls, provider))
-            return total
+            return float(row["paid_cny"]) + cny
 
     def paid_month_cny(self, month_key: str | None = None) -> float:
-        """本月付费消耗合计（仅月度桶；total 桶不再混入当月）。"""
+        """付费消耗合计（跨 provider 汇总；total 桶按累计口径计入当月预算判定）。"""
         key = month_key or _period_key("month", self.now_fn())
         with _LOCK, self._conn() as c:
             row = c.execute(
                 "SELECT COALESCE(SUM(paid_cny),0) s FROM ledger "
-                "WHERE period='month' AND period_key=?", (key,)).fetchone()
+                "WHERE period='total' OR (period='month' AND period_key=?)",
+                (key,)).fetchone()
             return float(row["s"])
 
     def status(self) -> list[dict]:

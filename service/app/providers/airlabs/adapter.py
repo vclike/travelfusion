@@ -165,8 +165,13 @@ class Adapter:
                 off_min = 0
         return (dt + timedelta(minutes=off_min)).date().isoformat()
 
-    def _match(self, rows: list[dict], q: dict) -> dict | None:
-        """按班号+航线+当地日期选行；无任何过滤条件时保持旧行为（取首行）。"""
+    def _match(self, rows: list[dict], q: dict, *, check_date: bool = False) -> dict | None:
+        """按班号+航线选行；check_date=True 时再验行当地日期。
+
+        日期过滤只用于 /flights（当日实测端点不辨日期，同名班次会跨日串行）；
+        /schedules 的 ±10h 服务端窗口本身就是日期护栏——2026-10-04 修复：
+        此前两端点都过滤，明日查询反被日期过滤误杀（schedules 行日期≠明天）。
+        """
         want = str(q.get("flight_no") or "").strip().upper().replace(" ", "")
         dep = str(q.get("dep_iata") or "").strip().upper()
         arr = str(q.get("arr_iata") or "").strip().upper()
@@ -178,7 +183,7 @@ class Adapter:
                 continue
             if arr and (f.get("arr_iata") or "").upper() != arr:
                 continue
-            if qdate and self._row_dep_local_date(f) not in (None, qdate):
+            if check_date and qdate and self._row_dep_local_date(f) not in (None, qdate):
                 continue
             return f
         return None
@@ -221,7 +226,7 @@ class Adapter:
             try:
                 rows = self._get_rows("flights", params)
                 calls += 1
-                fl_row = self._match(rows, q)
+                fl_row = self._match(rows, q, check_date=True)
             except ProviderError as e:
                 calls += 1
                 errors.append(f"flights: {e.code} {e.hint}")
