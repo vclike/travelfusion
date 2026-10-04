@@ -38,6 +38,8 @@ def test_build_search_payload_matches_cli_schema():
 def test_search_hotels_rewrites_links_and_needs_token(tmp_path, monkeypatch):
     (tmp_path / "token.json").write_text(
         json.dumps({"access_token": "tok-xyz"}), encoding="utf-8")
+    (tmp_path / "keys.yaml").write_text(
+        "rgh_promo_code: 0A0OIB\n", encoding="utf-8")
     monkeypatch.setenv("RGH_TOKEN_PATH", str(tmp_path / "token.json"))
 
     body = {"hotelInformationList": [{
@@ -76,6 +78,33 @@ def test_search_hotels_without_token_raises(tmp_path, monkeypatch):
     with pytest.raises(rgh.RghError) as ei:
         rgh.search_hotels(tmp_path, "q", "杭州")
     assert ei.value.code == "NO_TOKEN"
+
+
+def test_no_promo_code_configured_keeps_urls_clean(tmp_path, monkeypatch):
+    """公开发布缺省：未配置 rgh_promo_code → 链接原样（不归因）。"""
+    (tmp_path / "token.json").write_text(
+        json.dumps({"access_token": "tok-xyz"}), encoding="utf-8")
+    monkeypatch.setenv("RGH_TOKEN_PATH", str(tmp_path / "token.json"))
+
+    body = {"hotelInformationList": [{
+        "hotelId": 9, "name": "测试酒店", "starRating": 4, "address": "某路1号",
+        "price": {"lowestPrice": 300, "message": "3晚总价：900CNY"},
+        "bookingUrl": "https://rollinggo.cn/pages/hotel/detail/index?id=9&utm_source=rollinggo_cus",
+        "tags": [],
+    }]}
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["payload"] = json.loads(request.content)
+        return httpx.Response(200, json=body)
+
+    _mock_oauth(monkeypatch, handler)
+    hotels = rgh.search_hotels(tmp_path, "q", "杭州", "城市",
+                               "2026-10-18", 3, 2, 1)
+    u = hotels[0]["booking_url"]
+    assert "/pc/#/hotel/single" in u
+    assert "utm_source" not in u          # 未配置 → 不带任何归因
+    assert rgh.apply_promo(u, "") == u    # 空码改写=原样
 
 
 def _mock_oauth(monkeypatch, handler):

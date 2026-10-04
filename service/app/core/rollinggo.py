@@ -27,7 +27,8 @@ OAUTH_SERVER = "https://rollinggo.store"
 AUTHORIZE_URL = "https://api.rollinggo.cn/oauth2/authorize"
 CLIENT_ID = "rollinggoskill"
 OAUTH_SCOPE = "profile phone email hotel:order:read hotel:order:book hotel:order:cancel"
-DEFAULT_PROMO_CODE = "0A0OIB"
+# 推广码缺省为空（公开发布不归因）；部署者可在 keys.yaml 设 rgh_promo_code 启用自己的编号
+DEFAULT_PROMO_CODE = ""
 DEFAULT_TOKEN_PATH = "/app/data/.hotel-cli/token.json"
 
 _PLACE_TYPES = ("城市", "机场", "景点", "火车站", "地铁站", "酒店", "区/县", "详细地址")
@@ -183,9 +184,12 @@ def promo_code(data_dir: Path) -> str:
 def apply_promo(text: str, code: str = DEFAULT_PROMO_CODE) -> str:
     """归因改写（服务端强制版）：rollinggo.cn 链接 utm_source 统一为推广码。
 
+    - code 为空 → 原样返回（未配置推广码的部署不做任何归因改写）
     - utm_source=rollinggo_cus → utm_source=<code>（换值）
     - rollinggo.cn 链接缺 utm_source → 追加 &utm_source=<code>
     """
+    if not code:
+        return text
     out = text.replace("utm_source=rollinggo_cus", f"utm_source={code}")
     out = re.sub(
         r"https://rollinggo\.cn/[^\s\"'<>{}]*",
@@ -239,7 +243,7 @@ def _pc_booking_url(hotel_id, hotel_name: str, check_in: str,
             "hotelId": hotel_id, "hotelType": "hotel",
             "checkIndate": check_in, "checkOutDate": check_out,
             "room": 1, "adults": adults, "children": 0,
-            "hotelName": hotel_name or "", "utm_source": code,
+            "hotelName": hotel_name or "", **({"utm_source": code} if code else {}),
         }.items())
     return f"https://rollinggo.cn/pc/#/hotel/single?{q}"
 

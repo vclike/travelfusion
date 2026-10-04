@@ -1,0 +1,254 @@
+---
+name: rollinggo-hotel-booking
+version: "1.1.5"
+repository: "https://github.com/RollingGo-AI/rollinggo-hotel-skill-CN"
+description: RollingGo 酒店搜索与预订助手，通过调用 RollingGo 酒店服务接口实现酒店查询与订单全流程。支持场景：① 按城市/景点/地铁站/机场等地点搜索酒店 ② 按星级、预算、标签（泳池/含早/亲子/宠物友好等）筛选 ③ 查询指定酒店的实时房型与价格 ④ 对比多家酒店 ⑤ 引导用户完成预订 ⑥ 取消订单（预取消查询罚金与确认取消）。触发词：找酒店、订酒店、搜酒店、酒店推荐、酒店查询、附近酒店、五星酒店、民宿、度假村、查房价、看房型、入住、住哪、住宿、rollinggo、旅游住宿、出差住宿、亲子酒店、带泳池的酒店、含早餐酒店、取消订单、退订酒店、退房退款、取消预订。
+metadata:
+  {
+    "openclaw": {
+      "emoji": "🏨",
+      "skillKey": "rollinggo-hotel-booking",
+      "requires": {
+        "anyBins": ["rgh", "npx", "node", "python", "python3", "curl", "wget"]
+      },
+      "install": [
+        {
+          "id": "node",
+          "kind": "node",
+          "package": "@rollinggo/hotel@latest",
+          "bins": ["rgh"],
+          "label": "Install @rollinggo/hotel (npm)"
+        },
+        {
+          "id": "python",
+          "kind": "exec",
+          "command": "python scripts/install.py",
+          "label": "Install rgh standalone binary (python)"
+        }
+      ]
+    }
+  }
+---
+
+# RollingGo 酒店搜索与预订 Skill
+
+## 安装
+
+如果本地环境未安装 `rgh` 命令，可以通过以下三种方式之一进行安装：
+
+**方式一：通过 npm 安装（推荐）**
+如果环境中有 Node.js 和 npm，请执行：
+```bash
+npm install -g @rollinggo/hotel@latest
+```
+
+**方式二：通过 Python 自动脚本安装（免 Node.js 环境）**
+如果环境中有 Python，可以直接在 Skill 目录下运行我们提供的自动化安装脚本，它将自动检测您的操作系统并下载最新版的 `rgh` 独立二进制程序到本地 `bin` 文件夹：
+```bash
+python scripts/install.py
+```
+
+**方式三：手动下载独立可执行文件（免 Node/Python 环境）**
+如果环境中既没有 npm 也没有 Python，请从以下 Release 页面下载对应的单文件程序（Windows: `rgh-win.exe` / `rgh-windows.exe`, Mac: `rgh-macos`, Linux: `rgh-linux`）：
+`https://github.com/RollingGo-AI/oauth-hotel-cli/releases/latest`
+
+下载后将其重命名为 `rgh`（Windows下为 `rgh.exe`），赋予执行权限，并放入系统环境变量 PATH 或技能目录的 `bin` 文件夹中。
+
+**⚠️ 自动升级拦截原则：**
+CLI 工具内置了版本检测。当你在执行任何 `rgh` 命令时，如果控制台输出中出现 `📦 有新版本可用！` 或 `运行以下命令更新` 的提示，**你必须立即暂停当前操作，先使用上述三种方式之一将工具升级到最新版，升级成功后再重新执行刚才中断的命令。** 这样可避免由于服务端接口过期而导致的预订失败。
+
+---
+
+> ⚠️ **输出规范**：
+> 1. **严禁向用户展示任何技术细节**，包括但不限于：工具名（如 `search-hotels`、`hotel-detail`）、JSON 字段名（如 `hotelId`、`ratePlanId`、`referenceNo`）、命令行内容、技术参数。
+> 2. **只展示用户关心的信息**：酒店名称、星级、价格、距离、核心设施、标签、预订链接。
+> 3. **结果必须格式化展示**，每家酒店独占一个卡片，关键信息换行分隔，禁止堆砌在一行。
+> 4. **价格说明**：搜索结果中的价格为参考展示价，实际下单价以价格确认为准，展示时注明"参考价"。
+> 5. **登录授权**：用户通过 Agent 对话时看不到终端输出，执行 `rgh login` 后必须从输出中提取授权链接并回复给用户，不要展示二维码文本。
+> 6. **推广归因（强制，一单都不能漏）**：所有输出给用户的 rollinggo.cn 链接必须携带推广归因——把 URL 中 `utm_source` 参数的值**替换为 `<YOUR_PROMO_CODE>`**（如 `utm_source=rollinggo_cus` → `utm_source=<YOUR_PROMO_CODE>`）；若链接没有 `utm_source` 参数则在末尾追加 `&utm_source=<YOUR_PROMO_CODE>`。其余参数（id/checkInDate/checkOutDate/roomCount 等）一律原样保留，改参数名=佣金丢失。
+
+---
+
+## 推广归因（强制后处理）
+
+每次搜索/详情/下单产出 bookingUrl 后，**输出前必须执行**：
+
+1. **酒店详情/预订链接**：`utm_source` 值替换为 `<YOUR_PROMO_CODE>`
+2. **固定归因入口**（用户想"自己去找"或"自己跟 AI 订"时分享）：
+   - 搜索页：`https://rollinggo.cn/pages/reservationLink/index?utm_source=<YOUR_PROMO_CODE>`
+   - AI 对话页：`https://rollinggo.cn/pages/ai-home/index?utm_source=<YOUR_PROMO_CODE>`
+3. **分享规则**：推荐具体酒店 → 归因详情页；对方要自己搜 → 搜索页；对方要用 AI 订 → AI 页。分享哪个环节就归因哪个环节。
+4. 本规则与宿主技能 trip-planner 的「2d 推广归因」同一约定，两层任一生效即可，但都不得省略。
+
+## When to Use
+
+用户涉及酒店住宿相关的任何意图时均应触发本 Skill，包括但不限于以下场景：
+
+**搜索与发现**：
+- 按地点找酒店："帮我找北京三里屯附近酒店"、"三亚有什么好酒店"、"西湖旁边住宿推荐"
+- 按条件筛选："五星酒店"、"带泳池的酒店"、"含早餐的住宿"、"亲子酒店"、"宠物友好酒店"
+- 按预算筛选："500块以内的酒店"、"经济实惠的住宿"、"豪华酒店推荐"
+- 按品牌筛选："希尔顿"、"万豪"、"亚朵"、"全季"
+
+**查询与对比**：
+- 查房价："杭州酒店多少钱一晚"、"这个酒店什么价格"
+- 看房型："有什么房型"、"大床房有没有"、"家庭房推荐"
+- 比较住宿："帮我对比一下这两家酒店"、"哪个更划算"
+- 了解设施："有没有泳池"、"离地铁站多远"、"停车方便吗"
+
+**预订与订单**：
+- 预订酒店："帮我订这家酒店"、"我要下单"、"预订一间房"
+- 查询订单："我的订单"、"之前订的酒店"、"订单状态"
+- 取消与退订："帮我取消这个订单"、"不想住了退订"、"退房退款"、"查一下取消要扣多少钱"
+
+**触发词覆盖**：
+找酒店、订酒店、搜酒店、酒店推荐、酒店查询、附近酒店、五星酒店、民宿、度假村、查房价、看房型、入住、住哪、住宿、出差住宿、旅游住宿、亲子酒店、带泳池的酒店、含早餐酒店、商务酒店、情侣酒店、温泉酒店、海景房、江景房、取消订单、退订酒店、退房退款、取消预订。
+
+## When NOT to Use
+
+- 用户询问机票、火车票、租车、景点门票等非住宿类旅行需求
+- 用户只是闲聊旅游目的地，没有明确住宿意图
+- 用户已明确表示"不用订"、"只是问问"
+
+---
+
+## 安全门控
+
+> ⚠️ 酒店预订与退订属于**真实资金与消费操作**：
+> 1. **两步确认**：展示房型和价格后，须等用户明确选择方可锁价与下单。
+> 2. **信息完整性**：下单前须确认入住人姓名拼音与邮箱。
+> 3. **锁价时效**：锁定的价格凭证（`referenceNo`）有效期约 15-30 分钟，超时须重新锁价。
+> 4. **订单取消高危安全门控（两步确认）**：取消订单属于不可逆操作，绝对禁止未经二次确认直接取消！必须先执行 `pre-cancel` 查询取消手续费/违约金与凭证（`confirmId` 凭证 10 分钟有效），向用户明确汇报扣费金额与预计退款，取得用户明确肯定答复后，方可调用 `confirm-cancel`。
+
+---
+
+## 工作流程与动态 CLI 探知
+
+> 💡 **动态命令与参数自探知法则 (Self-Discovery Rule)**：
+> 1. **代理调用**：所有 CLI 命令统一通过代理脚本调用：`node scripts/rgh.js <子命令>`（无 Node 环境时使用 `python scripts/rgh.py <子命令>`），以确保自动完成环境解析与 `CLIENT_ID` (rollinggoskill) 的挂载。
+> 2. **动态参数探知**：执行任何子命令前，**先运行 `node scripts/rgh.js <子命令> --help` 获取实时命令行参数帮助**，并按最新的 `--help` 动态拼装命令参数！
+
+---
+
+### 业务步骤指南
+
+#### Step 0：登录授权检查
+- 执行 `node scripts/rgh.js status`（也可使用 `whoami`）检查登录状态。
+- 若未登录，执行 `node scripts/rgh.js login`（⚠️ **必须以异步/后台模式运行**，如 `WaitMsBeforeAsync=2000`）。从输出提取授权链接（`https://rollinggo.store/s/xxx`），回复给用户完成授权。
+
+#### Step 1：信息收集
+- 确认目的地（必须）、入住日期（默认明天）、入住晚数（默认 1 晚）、人数（默认 2 人）。
+
+#### Step 2：获取标签字典（按需）
+- 遇特色需求（如泳池、早餐、亲子、宠物等），先执行 `node scripts/rgh.js hotel-tags` 精确匹配标签名称。
+
+#### Step 3：搜索酒店
+- 先运行 `node scripts/rgh.js search-hotels --help` 查看最新筛选参数，根据用户需求拼装命令。
+- **placeType 选择规则**（必须精确匹配）：`城市`、`机场`、`景点`、`火车站`、`地铁站`、`酒店`、`区/县`、`详细地址`。
+
+**搜索结果展示模板**（每家酒店一个卡片）：
+*(【极其重要】：你必须使用标准的 Markdown 图片语法 `![alt](url)` 来渲染 imageUrl，且必须将图片展示在模板末尾。若 imageUrl 中包含未编码的空格，需手动将空格替换为 `%20`，或使用尖括号将其包裹如 `![alt](<url>)`，否则会导致宿主平台无法渲染图片！绝对禁止使用 HTML `<img>` 标签，绝对禁止使用纯文本 URL！)*
+
+```markdown
+🏨 {酒店名称}
+⭐ {星级}星  *(仅当返回了 distanceInMeters 字段时展示：📍 距{搜索地点}{距离}米)*
+💰 参考价 ¥{最低价}/晚
+🏷️ {标签1} · {标签2} · {标签3}
+![{酒店名称}]({imageUrl})
+```
+
+返回 3-5 家酒店后，询问用户："想了解哪家的详细房型和价格？"
+
+#### Step 4：查询房型与实时价格
+- 先运行 `node scripts/rgh.js hotel-detail --help` 查看参数，传入选中的 `hotelId` 查询实时房态报价。
+
+**房型展示模板**（每个房型一条）：
+
+```
+🛏️ {房型中文名}（{床型描述}）
+💰 总价 ¥{totalPrice}（¥{均价}/晚）
+📋 取消政策：{取消政策描述}
+```
+
+展示 3-5 个推荐房型后，引导用户回复：“请告诉我您选择的房型名称，我来为您锁定价格并办理下单。”
+
+#### Step 5：价格确认与下单（安全门控）
+1. 运行 `node scripts/rgh.js price-confirm --help` 查看参数，锁定价格并获取凭证 `referenceNo`。
+2. 确认联系人拼音姓名与邮箱后，运行 `node scripts/rgh.js book --help` 查看参数，提交订单并提取支付链接。
+
+**待支付订单展示模板**：
+*(【极其重要】：绝不能臆造或编造支付方式（如“自动识别环境，支持支付宝或微信”）。必须严格按照以下模板输出，绝不允许自行添加任何关于支付环境或支付方式的说明！)*
+
+```
+📝 订单已生成，等待支付！
+确认号：**{orderNo}**
+酒店：{酒店名}
+房型：{房型名}
+入住：{入住日期} | 离店：{离店日期}
+总价：¥{价格}
+📋 取消政策：{取消政策描述}
+💳 请在30分钟内完成支付：{支付链接}
+```
+
+#### Step 6：查询订单与详情
+- 运行 `node scripts/rgh.js orders --help` 或 `node scripts/rgh.js order-detail --help` 查询用户历史订单或单条订单详情。
+
+#### Step 7：取消订单（高危两步确认）
+> ⚠️ **高危安全门控**：取消订单属于**不可逆操作**，取消后不可撤销！必须严格执行两步确认：
+> 1. 先调用 `pre-cancel` 预取消查询取消手续费/违约金与确认凭证（`confirmId` 凭证 10 分钟有效）。
+> 2. 向用户如实汇报违约金金额与预计退款，**必须等用户明确肯定答复后**，方可运行 `confirm-cancel` 提交取消。
+
+1. **预取消查询违约金**：
+   - 先运行 `node scripts/rgh.js pre-cancel --help` 查看参数。
+   - 若用户未提供订单号，先通过 `node scripts/rgh.js orders` 定位订单号。
+   - 执行 `node scripts/rgh.js pre-cancel --order-no <orderNo>`。
+   - 提取 `canCancel`、`penaltyAmount`、`confirmId`、`bookingId`。若 `canCancel` 为 false，告知用户原因或客服指引。
+
+2. **向用户核实违约金与取消意愿**：
+```
+⚠️ 订单取消确认：
+订单号：**{orderNo}**
+酒店：{酒店名}
+取消手续费/违约金：¥{penaltyAmount}
+预计退款：¥{预计退款金额}
+
+⚠️ 订单取消后无法恢复，请确认是否继续取消？
+```
+
+3. **用户明确确认后，执行确认取消**：
+   - 先运行 `node scripts/rgh.js confirm-cancel --help` 查看参数。
+   - 执行 `node scripts/rgh.js confirm-cancel --order-no <orderNo> --booking-id <bookingId> --confirm-id <confirmId>`。
+   - 向用户清晰展示取消成功结果。
+
+**取消成功展示模板**：
+```
+✅ 订单已成功取消！
+确认号：**{orderNo}**
+退款处理中，款项将按原支付路径原路退回，预计 1-3 个工作日内到账。
+```
+
+---
+
+## 搜索结果不理想时的语义化降级策略
+
+若搜索 0 结果，按以下顺序静默放宽条件重试：
+1. 移除星级范围限制
+2. 扩大搜索半径/距离参数
+3. 将硬约束标签（Required Tag）降级为软偏好标签（Preferred Tag）
+4. 增大返回数量（Size）
+5. 仅保留目的地与入住日期
+
+---
+
+## 关键交互规则
+
+- **屏蔽技术细节**：严禁向用户暴露 `hotelId`、`ratePlanId`、`referenceNo`、JSON 响应或命令行。
+- **真实价格说明**：搜索展示价注明“参考价”，最终金额以价格确认锁价为准。
+- **支付链接真实可用**：生成的订单支付链接可直接提供给用户点击完成支付。
+- **多家对比**：用户要对比时，可同时展示多家的卡片，突出差异点（价格/距离/设施）。
+
+---
+
+## 详细参考文档
+
+- [references/cli-params.md](references/cli-params.md) — CLI 命令完整参数规范
