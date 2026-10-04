@@ -24,7 +24,7 @@ def test_amap_static_url_structure():
     url = cards._amap_static_url(shape, "test-key")
     assert url and url.startswith("https://restapi.amap.com/v3/staticmap")
     assert "key=test-key" in url
-    assert "size=400*130" in url
+    assert "size=400*170" in url  # 加高画幅：路线垂直占框 ~75%，不贴边
     assert "paths=6,0x2E7CF6,1,," in url
 
 

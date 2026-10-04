@@ -341,20 +341,26 @@ def _downsample(shape: list, max_pts: int = 60) -> list:
     return [shape[round(i * step)] for i in range(max_pts)]
 
 
-def _fit_zoom(lats: list, lngs: list, width_px: int = 400,
-              height_px: int = 130) -> int:
-    """按包围盒自适应 zoom（含高德实测校准）。
+# 静态地图画幅与实测标定（2026-10-04，军安卫士→东安湖四档实拍）：
+# 高德静态图 zoom 语义与 Web-Mercator 差约一档；z10 时每物理像素 ≈ 2.625e-4°，
+# zoom 每加一级减半。画幅从 400*130 提到 400*170（scale=2 → 物理 800×340）：
+# 路线垂直占框率从 ~100%（贴边）降到 ~75%，留出呼吸边距。
+_STATIC_W, _STATIC_H, _STATIC_SCALE = 400, 170, 2
+_AMAP_DEG_PER_PX_Z10 = 2.625e-4
 
-    2026-10-04 v2：纸面 Web-Mercator 公式比高德静态图实际视野深一档
-    （scale=2 物理像素口径）——z11 公式值实测裁掉起点，z10 完整
-    （军安卫士→东安湖实拍四档对比校准）。故公式值再减 1。
-    """
-    lat_span = (max(lats) - min(lats)) or 1e-4
-    lng_span = (max(lngs) - min(lngs)) or 1e-4
-    m = 1.15
-    span = max(lng_span * m, lat_span * m * (width_px / height_px))
-    zoom = math.floor(math.log2(360.0 * width_px / (256.0 * span))) - 1
-    return max(4, min(17, zoom))
+
+def _fit_zoom(lats: list, lngs: list) -> int:
+    """按包围盒选 zoom（实测像素模型）：路线占框宽 ≤72%、高 ≤76%，
+    端点标注永不贴边；从大到小找第一个满足的档位。"""
+    span_w = (max(lngs) - min(lngs)) or 1e-4
+    span_h = (max(lats) - min(lats)) or 1e-4
+    w_phys = _STATIC_W * _STATIC_SCALE
+    h_phys = _STATIC_H * _STATIC_SCALE
+    for z in range(17, 3, -1):
+        dpp = _AMAP_DEG_PER_PX_Z10 / (2 ** (z - 10))
+        if span_w / dpp <= w_phys * 0.72 and span_h / dpp <= h_phys * 0.78:
+            return z
+    return 4
 
 
 def _amap_static_url(shape: list, key: str, zoom_bias: int = 0,
@@ -382,7 +388,7 @@ def _amap_static_url(shape: list, key: str, zoom_bias: int = 0,
         o, dpt = gcj[0], gcj[-1]
         return ("https://restapi.amap.com/v3/staticmap"
                 f"?location={clng:.6f},{clat:.6f}&zoom={zoom}"
-                f"&size=400*130&scale=2"
+                f"&size={_STATIC_W}*{_STATIC_H}&scale={_STATIC_SCALE}"
                 f"&markers=mid,0x2E7CF6,A:{o[1]:.6f},{o[0]:.6f}"
                 f"|mid,0x00B578,B:{dpt[1]:.6f},{dpt[0]:.6f}"
                 f"&paths=6,0x2E7CF6,1,,:{path}&key={key}")
