@@ -42,14 +42,10 @@ def test_amap_static_url_rejects_degenerate_shape():
 
 
 def test_fit_zoom_covers_full_route():
-    """成都绕城实例：fit zoom 的视野必须完整覆盖路线包围盒（修 round 裁切）。"""
-    shape = [[30.5467, 104.0884], [30.6158, 104.2363]]  # 实测军安卫士→东安湖包围盒
+    """成都绕城实例：实拍校准后的 fit zoom 必须完整容纳路线（z10 实证）。"""
+    shape = [[30.5467, 104.0884], [30.6158, 104.2363]]  # 军安卫士→东安湖包围盒
     z = cards._fit_zoom([s[0] for s in shape], [s[1] for s in shape])
-    w_cov = 360.0 * 400 / (256.0 * 2 ** z)
-    h_cov = 360.0 * 130 / (256.0 * 2 ** z)
-    assert w_cov >= (0.2363 - 0.0884) * 1.1
-    assert h_cov >= (0.6158 - 0.5467) * 1.1
-    assert z == 11
+    assert z == 10  # 2026-10-04 实拍校准：z11 裁起点、z10 完整
 
 
 def test_static_urls_three_levels():

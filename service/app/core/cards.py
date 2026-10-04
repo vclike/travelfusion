@@ -343,16 +343,17 @@ def _downsample(shape: list, max_pts: int = 60) -> list:
 
 def _fit_zoom(lats: list, lngs: list, width_px: int = 400,
               height_px: int = 130) -> int:
-    """按包围盒自适应 zoom：floor + 15% 边距（给端点标注留空间）。
+    """按包围盒自适应 zoom（含高德实测校准）。
 
-    2026-10-04 修复：此前 round() 会向上取整——视野恰好差一点，路线被裁切
-    （成都绕城 0.148° 经度跨度在 z12 只容 0.137°）。纬度按画幅宽高比折算。
+    2026-10-04 v2：纸面 Web-Mercator 公式比高德静态图实际视野深一档
+    （scale=2 物理像素口径）——z11 公式值实测裁掉起点，z10 完整
+    （军安卫士→东安湖实拍四档对比校准）。故公式值再减 1。
     """
     lat_span = (max(lats) - min(lats)) or 1e-4
     lng_span = (max(lngs) - min(lngs)) or 1e-4
     m = 1.15
     span = max(lng_span * m, lat_span * m * (width_px / height_px))
-    zoom = math.floor(math.log2(360.0 * width_px / (256.0 * span)))
+    zoom = math.floor(math.log2(360.0 * width_px / (256.0 * span))) - 1
     return max(4, min(17, zoom))
 
 
